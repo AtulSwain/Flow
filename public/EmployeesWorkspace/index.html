@@ -1,0 +1,2459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowDesk | Employee Workspace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            blue: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            },
+            slate: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* STRICTLY ENFORCE SQUARE CORNERS EVERYWHERE */
+    * {
+      border-radius: 0 !important;
+    }
+
+    body {
+      background-color: #f8fafc;
+      color: #1e293b;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Dark Theme Overrides */
+    html.dark body {
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+
+    html.dark .bg-white {
+      background-color: #1e293b !important;
+    }
+
+    html.dark .bg-slate-50 {
+      background-color: #0f172a !important;
+    }
+
+    html.dark .bg-slate-100 {
+      background-color: #334155 !important;
+    }
+
+    html.dark .border-slate-200,
+    html.dark .border-slate-300 {
+      border-color: #334155 !important;
+    }
+
+    html.dark .border-slate-100 {
+      border-color: #1e293b !important;
+    }
+
+    html.dark .text-slate-900,
+    html.dark .text-black {
+      color: #f8fafc !important;
+    }
+
+    html.dark .text-slate-800 {
+      color: #f1f5f9 !important;
+    }
+
+    html.dark .text-slate-700,
+    html.dark .text-slate-600 {
+      color: #cbd5e1 !important;
+    }
+
+    html.dark .text-slate-500 {
+      color: #94a3b8 !important;
+    }
+
+    html.dark .hover\:bg-slate-50:hover {
+      background-color: #334155 !important;
+    }
+
+    html.dark .hover\:bg-slate-100:hover {
+      background-color: #475569 !important;
+    }
+
+    html.dark input,
+    html.dark textarea,
+    html.dark select {
+      background-color: #0f172a !important;
+      color: #f8fafc !important;
+    }
+
+    html.dark .modal-bg {
+      background-color: rgba(0, 0, 0, 0.75);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Dark Mode Scrollbar */
+    html.dark ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+
+    html.dark ::-webkit-scrollbar-thumb {
+      background: #475569;
+    }
+
+    html.dark ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease-in-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Toast styles */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      padding: 14px 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+    }
+
+    html.dark .toast {
+      background-color: #1e293b;
+      border-color: #334155;
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    /* Modals */
+    .modal-bg {
+      background-color: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
+    }
+
+    .calendar-day:hover {
+      border-color: #3b82f6;
+      background-color: #eff6ff !important;
+      cursor: pointer;
+    }
+
+    html.dark .calendar-day:hover {
+      background-color: #1e3a8a !important;
+    }
+  </style>
+</head>
+
+<body class="flex h-screen overflow-hidden text-sm">
+
+  <!-- Initial Loader -->
+  <div id="loader"
+    class="fixed inset-0 bg-slate-50 z-[9999] flex flex-col items-center justify-center transition-opacity duration-500">
+    <p id="loader-text" class="text-slate-700 text-base font-bold mb-6 tracking-wide">Authenticating...</p>
+    <div class="w-48 h-1 bg-slate-200">
+      <div id="loader-progress" class="h-1 bg-blue-600 w-0 transition-all duration-1000 ease-out"></div>
+    </div>
+  </div>
+
+  <!-- Mobile Sidebar Overlay -->
+  <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar Navigation -->
+  <aside id="sidebar"
+    class="bg-white border-r border-slate-200 w-64 flex flex-col h-full fixed md:relative z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-200 shrink-0">
+    <!-- Logo Area -->
+    <div class="h-16 flex items-center px-6 border-b border-slate-200 bg-white shrink-0">
+      <span class="font-bold text-xl text-black tracking-tight">FlowDesk</span>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 overflow-y-auto py-3 flex flex-col gap-0.5 px-3">
+      <button onclick="switchSection('dashboard', this)"
+        class="nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 bg-blue-50 text-blue-700 border-l-4 border-blue-600 font-semibold transition-colors">
+        <i class="fas fa-chart-pie w-5 text-center"></i> Dashboard
+      </button>
+      <button onclick="switchSection('attendance', this)"
+        class="nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-l-4 border-transparent hover:border-blue-300 font-medium transition-colors">
+        <i class="fas fa-id-card w-5 text-center"></i> Attendance
+      </button>
+      <button onclick="switchSection('tasks', this)"
+        class="nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-l-4 border-transparent hover:border-blue-300 font-medium transition-colors">
+        <i class="fas fa-tasks w-5 text-center"></i> Tasks
+      </button>
+      <button onclick="switchSection('calendar', this)"
+        class="nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-l-4 border-transparent hover:border-blue-300 font-medium transition-colors">
+        <i class="fas fa-calendar-alt w-5 text-center"></i> Calendar
+      </button>
+      <button onclick="switchSection('chat', this)"
+        class="nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-l-4 border-transparent hover:border-blue-300 font-medium transition-colors">
+        <i class="fas fa-comments w-5 text-center"></i> Chat Room
+      </button>
+      <button onclick="switchSection('calls', this)"
+        class="nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-l-4 border-transparent hover:border-blue-300 font-medium transition-colors">
+        <i class="fas fa-headset w-5 text-center"></i> Call Rooms
+      </button>
+      <button onclick="switchSection('notes', this)"
+        class="nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-l-4 border-transparent hover:border-blue-300 font-medium transition-colors">
+        <i class="fas fa-sticky-note w-5 text-center"></i> Quick Notes
+      </button>
+      <button onclick="switchSection('announcements', this)"
+        class="nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-l-4 border-transparent hover:border-blue-300 font-medium transition-colors">
+        <i class="fas fa-bullhorn w-5 text-center"></i> Announcements
+      </button>
+      <button onclick="switchSection('company-suite', this)"
+        class="nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-l-4 border-transparent hover:border-blue-300 font-medium transition-colors">
+        <i class="fas fa-building w-5 text-center"></i> Company Suite
+      </button>
+      <button onclick="switchSection('settings', this)"
+        class="nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-l-4 border-transparent hover:border-blue-300 font-medium transition-colors mt-auto">
+        <i class="fas fa-cog w-5 text-center"></i> Settings
+      </button>
+      <button onclick="logout()"
+        class="flex items-center gap-3 w-full text-left px-4 py-2.5 text-slate-600 hover:bg-slate-100 font-medium transition-colors">
+        <i class="fas fa-sign-out-alt w-5 text-center"></i> Logout
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-slate-50">
+
+    <!-- Topbar -->
+    <header
+      class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0 relative">
+      <div class="flex items-center gap-4 flex-1">
+        <button class="md:hidden text-slate-500 hover:text-blue-600 p-2" onclick="toggleSidebar()">
+          <i class="fas fa-bars text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Profile & Notifications & Clock -->
+      <div class="flex items-center gap-4 sm:gap-6 ml-4">
+        <!-- Live Clock -->
+        <div
+          class="hidden md:flex items-center text-slate-600 font-bold border border-slate-200 px-3 py-1.5 bg-slate-50">
+          <i class="far fa-clock mr-2 text-blue-600"></i>
+          <span id="live-clock">00:00:00</span>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button class="relative text-slate-500 hover:text-blue-600 transition-colors" onclick="toggleTheme()"
+          title="Toggle Dark Mode">
+          <i class="fas fa-moon text-lg" id="theme-icon"></i>
+        </button>
+
+        <!-- Notifications -->
+        <button id="employee-notification-button" class="relative text-slate-500 hover:text-blue-600 transition-colors"
+          onclick="toggleEmployeeNotificationPanel()">
+          <i class="fas fa-bell text-lg"></i>
+          <span
+            class="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-blue-600 text-white text-[10px] leading-4 text-center"
+            id="employee-notification-count">0</span>
+        </button>
+
+        <div class="h-8 w-px bg-slate-200"></div>
+
+        <!-- Profile Block (Clickable) -->
+        <div
+          class="flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-1 transition-colors border border-transparent hover:border-slate-200"
+          onclick="openProfileModal()">
+          <div class="hidden sm:block text-right">
+            <div class="font-bold text-slate-900 text-sm leading-tight flex items-center justify-end gap-1.5">
+              Janam Jain
+            </div>
+            <div class="text-xs text-slate-500 flex items-center justify-end gap-1 mt-0.5">
+              <span class="w-1.5 h-1.5 bg-blue-500 inline-block" id="status-indicator"></span>
+              <span id="status-text">Online</span>
+            </div>
+          </div>
+          <img src="https://ui-avatars.com/api/?name=Janam+Jain&background=f1f5f9&color=2563eb&bold=true" alt="Profile"
+            class="w-9 h-9 border border-slate-200 object-cover">
+        </div>
+      </div>
+    </header>
+
+    <!-- Dynamic Content Sections -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 relative">
+
+      <!-- 1. Dashboard Section -->
+      <section id="section-dashboard" class="section-content fade-in">
+        <div class="flex justify-between items-end mb-5">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Workspace Overview</h1>
+          </div>
+          <div class="hidden sm:block text-slate-500 font-medium" id="current-date"></div>
+        </div>
+
+        <!-- Denser 4-column layout for stat cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Stat Card: Pending Tasks -->
+          <div
+            class="bg-white border border-slate-200 p-5 shadow-sm hover:border-blue-300 transition-colors cursor-pointer"
+            onclick="goToSection('tasks')">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-slate-600 font-medium text-sm">Pending Tasks</h3>
+              <div class="w-8 h-8 bg-slate-50 flex items-center justify-center text-slate-600 border border-slate-100">
+                <i class="fas fa-clock"></i>
+              </div>
+            </div>
+            <div class="text-3xl font-bold text-slate-900" id="dash-pending-tasks">0</div>
+            <div class="text-xs text-slate-500 mt-1">Click to view & manage</div>
+          </div>
+
+          <!-- Stat Card: Completed Tasks -->
+          <div
+            class="bg-white border border-slate-200 p-5 shadow-sm hover:border-blue-300 transition-colors cursor-pointer"
+            onclick="goToSection('tasks')">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-slate-600 font-medium text-sm">Completed Tasks</h3>
+              <div class="w-8 h-8 bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100">
+                <i class="fas fa-check-square"></i>
+              </div>
+            </div>
+            <div class="text-3xl font-bold text-slate-900" id="dash-completed-tasks">0</div>
+            <div class="text-xs text-slate-500 mt-1">All time total</div>
+          </div>
+
+          <!-- Stat Card: Employees Present -->
+          <div
+            class="bg-white border border-slate-200 p-5 shadow-sm hover:border-blue-300 transition-colors cursor-pointer"
+            onclick="openEmployeeDirectory()">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-slate-600 font-medium text-sm">Company Attendance</h3>
+              <div class="w-8 h-8 bg-slate-50 flex items-center justify-center text-slate-600 border border-slate-100">
+                <i class="fas fa-users"></i>
+              </div>
+            </div>
+            <div class="text-3xl font-bold text-slate-900"><span id="dash-present">42</span> <span
+                class="text-lg text-slate-400 font-medium">/ 50</span></div>
+            <div class="text-xs text-slate-500 mt-1">Click to view all employees</div>
+          </div>
+
+          <!-- Stat Card: Attendance Status -->
+          <div
+            class="bg-white border border-slate-200 p-5 shadow-sm hover:border-blue-300 transition-colors cursor-pointer"
+            onclick="goToSection('attendance')">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-slate-600 font-medium text-sm">My Attendance</h3>
+              <div class="w-8 h-8 bg-slate-50 flex items-center justify-center text-slate-600 border border-slate-100">
+                <i class="fas fa-id-badge"></i>
+              </div>
+            </div>
+            <div class="text-lg font-bold text-slate-900" id="dash-my-attendance">Not Punched In</div>
+            <div class="text-xs text-slate-500 mt-1">Click to manage</div>
+          </div>
+        </div>
+
+        <!-- Lower Dashboard Info Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+          <!-- Manager Directives & Tasks -->
+          <div class="lg:col-span-2 bg-white border border-slate-200 shadow-sm p-5 flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+              <h3 class="font-bold text-slate-900 text-lg">Manager Directives & Important Updates</h3>
+              <button class="text-blue-600 text-xs font-bold hover:underline" onclick="goToSection('tasks')">View All
+                Tasks</button>
+            </div>
+            <div class="space-y-4 overflow-y-auto flex-1">
+              <div class="flex gap-4 items-start">
+                <img src="https://ui-avatars.com/api/?name=David+Chen&background=f1f5f9&color=0f172a&bold=true"
+                  class="w-10 h-10 border border-slate-200 object-cover shrink-0">
+                <div class="flex-1">
+                  <div class="flex justify-between items-baseline mb-1">
+                    <div class="font-bold text-slate-900 text-sm">David Chen (VP Operations)</div>
+                    <div class="text-xs text-slate-500">2 hours ago</div>
+                  </div>
+                  <div class="text-sm text-slate-700 bg-slate-50 border border-slate-100 p-3">
+                    <span
+                      class="bg-red-100 text-red-700 text-[10px] px-1.5 py-0.5 border border-red-200 font-bold mr-2 uppercase tracking-wide">High
+                      Priority</span>
+                    Please ensure all Q3 compliance reports are uploaded to the shared secure drive by EOD Thursday. No
+                    exceptions.
+                  </div>
+                </div>
+              </div>
+              <div class="flex gap-4 items-start">
+                <img src="https://ui-avatars.com/api/?name=HR+Dept&background=eff6ff&color=2563eb&bold=true"
+                  class="w-10 h-10 border border-slate-200 object-cover shrink-0">
+                <div class="flex-1">
+                  <div class="flex justify-between items-baseline mb-1">
+                    <div class="font-bold text-slate-900 text-sm">Human Resources</div>
+                    <div class="text-xs text-slate-500">Yesterday</div>
+                  </div>
+                  <div class="text-sm text-slate-700 bg-slate-50 border border-slate-100 p-3">
+                    A new mandatory training module on Data Security has been assigned to your portal. Please complete
+                    it by the end of the month.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming Reminders & Notes Column -->
+          <div class="space-y-4 flex flex-col h-full">
+            <!-- Upcoming Reminders -->
+            <div class="bg-white border border-slate-200 shadow-sm p-5">
+              <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                <h3 class="font-bold text-slate-900 text-lg">Upcoming Reminders</h3>
+                <button class="text-blue-600 text-xs font-bold hover:underline"
+                  onclick="goToSection('calendar')">Calendar</button>
+              </div>
+              <div class="space-y-3">
+                <div class="border-l-4 border-blue-500 bg-blue-50 p-3 border-y border-r border-slate-200">
+                  <div class="text-xs text-blue-600 font-bold mb-1"><i class="far fa-clock mr-1"></i> Today, 2:00 PM
+                  </div>
+                  <div class="text-sm font-bold text-slate-800">Client Sync - Alpha Project</div>
+                  <div class="text-xs text-slate-500 mt-1">Call Room: Management Team</div>
+                </div>
+                <div class="border-l-4 border-slate-400 bg-slate-50 p-3 border-y border-r border-slate-200">
+                  <div class="text-xs text-slate-500 font-bold mb-1"><i class="far fa-clock mr-1"></i> Tomorrow, 10:00
+                    AM</div>
+                  <div class="text-sm font-bold text-slate-800">Weekly Team Standup</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Notes Preview Widget -->
+            <div class="bg-white border border-slate-200 shadow-sm p-5 flex-1 flex flex-col min-h-[150px]">
+              <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3 shrink-0">
+                <h3 class="font-bold text-slate-900 text-lg">My Quick Notes</h3>
+                <button class="text-blue-600 text-xs font-bold hover:underline"
+                  onclick="goToSection('notes')">Edit</button>
+              </div>
+              <div class="text-sm text-slate-700 whitespace-pre-wrap flex-1 overflow-y-auto"
+                id="dash-quick-notes-preview">
+                <span class="text-slate-400 italic">No notes saved yet.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Attendance Section -->
+      <section id="section-attendance" class="section-content hidden fade-in">
+        <div class="mb-5">
+          <h1 class="text-2xl font-bold text-slate-900">Attendance Register</h1>
+          <p class="text-slate-500 mt-1">Record your daily work hours.</p>
+        </div>
+        <div class="bg-white border border-slate-200 p-8 shadow-sm max-w-md text-center mx-auto mt-10">
+          <div class="text-5xl text-blue-600 mb-6"><i class="fas fa-fingerprint"></i></div>
+          <h2 class="text-xl font-bold text-slate-900 mb-2">Punch In / Out</h2>
+          <p class="text-slate-500 mb-8" id="attendance-status-text">You have not punched in today.</p>
+
+          <button id="punch-btn" onclick="punchAttendance()"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 border border-blue-700 transition-colors">
+            PUNCH IN
+          </button>
+
+          <div class="mt-8 pt-6 border-t border-slate-200 text-left">
+            <h3 class="font-bold text-slate-700 mb-3">Today's Log</h3>
+            <div id="attendance-log" class="text-sm text-slate-600 space-y-2">
+              <div class="text-slate-400 italic">No records for today.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Tasks Section -->
+      <section id="section-tasks" class="section-content hidden fade-in">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Assigned Tasks</h1>
+            <p class="text-slate-500 mt-1">Manage and track your project deliverables.</p>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 shadow-sm mb-6 max-w-6xl">
+          <div class="p-4 bg-slate-50 border-b border-slate-200 flex gap-2">
+            <input type="text" id="new-task-input" placeholder="Enter new task description..."
+              class="flex-1 border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none transition-colors"
+              onkeypress="if(event.key === 'Enter') addNewTask()">
+            <button onclick="addNewTask()"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 font-bold transition-colors border border-blue-700 whitespace-nowrap">
+              Add Task
+            </button>
+          </div>
+
+          <!-- Task List -->
+          <div class="divide-y divide-slate-200" id="task-list">
+            <!-- Tasks generated by JS -->
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-6xl">
+          <div class="bg-white border border-slate-200 shadow-sm">
+            <div class="p-4 bg-slate-50 border-b border-slate-200">
+              <h2 class="font-bold text-slate-900">Send Request to Manager</h2>
+              <p class="text-xs text-slate-500 mt-1">Leave, access, expense, or any help request goes directly to
+                managers.</p>
+            </div>
+            <div class="p-4 space-y-3">
+              <select id="request-type"
+                class="w-full border border-slate-300 px-4 py-2 bg-white focus:border-blue-500 focus:outline-none">
+                <option value="Leave Request">Leave Request</option>
+                <option value="Access Request">Access Request</option>
+                <option value="Expense Claim">Expense Claim</option>
+                <option value="General Help">General Help</option>
+              </select>
+              <textarea id="request-details" rows="4" placeholder="Write request details..."
+                class="w-full border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none"></textarea>
+              <button onclick="sendEmployeeRequest()"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 font-bold border border-blue-700">
+                Send Request
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 shadow-sm">
+            <div class="p-4 bg-slate-50 border-b border-slate-200">
+              <h2 class="font-bold text-slate-900">My Requests</h2>
+            </div>
+            <div class="divide-y divide-slate-200 max-h-72 overflow-y-auto" id="employee-request-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Calendar & Reminders -->
+      <section id="section-calendar" class="section-content hidden fade-in">
+        <div class="mb-5">
+          <h1 class="text-2xl font-bold text-slate-900">Calendar & Reminders</h1>
+          <p class="text-slate-500 mt-1">Click any day to add a personal note or scheduled reminder.</p>
+        </div>
+
+        <div class="max-w-6xl mx-auto flex flex-col lg:flex-row gap-4">
+          <!-- Main Calendar Grid -->
+          <div class="bg-white border border-slate-200 shadow-sm flex-1">
+            <div class="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+              <button class="px-3 py-1 border border-slate-300 bg-white hover:bg-slate-100" onclick="changeMonth(-1)"><i
+                  class="fas fa-chevron-left text-slate-600"></i></button>
+              <h2 class="font-bold text-slate-800 text-lg" id="cal-month-display">May 2026</h2>
+              <button class="px-3 py-1 border border-slate-300 bg-white hover:bg-slate-100" onclick="changeMonth(1)"><i
+                  class="fas fa-chevron-right text-slate-600"></i></button>
+            </div>
+            <div
+              class="grid grid-cols-7 border-b border-slate-200 bg-white text-center text-xs font-bold text-slate-500 uppercase tracking-wide">
+              <div class="py-2 border-r border-slate-200">Sun</div>
+              <div class="py-2 border-r border-slate-200">Mon</div>
+              <div class="py-2 border-r border-slate-200">Tue</div>
+              <div class="py-2 border-r border-slate-200">Wed</div>
+              <div class="py-2 border-r border-slate-200">Thu</div>
+              <div class="py-2 border-r border-slate-200">Fri</div>
+              <div class="py-2">Sat</div>
+            </div>
+            <div class="grid grid-cols-7" id="calendar-grid">
+              <!-- Generated by JS -->
+            </div>
+          </div>
+
+          <!-- Side Panel: Active Reminders -->
+          <div class="w-full lg:w-72 bg-white border border-slate-200 shadow-sm flex flex-col shrink-0 h-[fit-content]">
+            <div class="p-4 border-b border-slate-200 bg-slate-50">
+              <h3 class="font-bold text-slate-900">Scheduled Reminders</h3>
+            </div>
+            <div class="p-4 space-y-4">
+              <div class="text-xs text-slate-600">
+                Alerts will trigger automatically when the time matches.
+              </div>
+              <!-- Example pre-filled active reminder -->
+              <div class="p-3 border border-slate-200 bg-slate-50">
+                <div class="flex justify-between items-start mb-2">
+                  <span class="bg-blue-600 text-white text-[10px] uppercase font-bold px-2 py-0.5">Active</span>
+                  <i class="fas fa-bell text-blue-500 text-sm"></i>
+                </div>
+                <div class="font-bold text-slate-800 text-sm">Update Server Logs</div>
+                <div class="text-xs text-slate-500 mt-1">Today at 16:30</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. Chat Room Section -->
+      <section id="section-chat" class="section-content hidden h-[calc(100vh-6rem)] md:h-[calc(100vh-7rem)] relative">
+
+        <!-- Authentication Gate for Chat -->
+        <div id="chat-auth-gate"
+          class="absolute inset-0 bg-slate-50 z-20 flex flex-col items-center justify-center p-4">
+          <div class="bg-white border border-slate-200 p-8 shadow-sm max-w-sm w-full text-center">
+            <div
+              class="w-16 h-16 bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mx-auto mb-4 border border-blue-100">
+              <i class="fas fa-lock"></i>
+            </div>
+            <h2 class="text-xl font-bold text-slate-900 mb-2">Secure Chat Access</h2>
+            <p class="text-slate-500 text-sm mb-6">Please authenticate to enter the company chat room.</p>
+
+            <div class="space-y-4 text-left">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Employee ID</label>
+                <input type="text" id="chat-emp-id" placeholder="e.g. EMP-1088"
+                  class="w-full border border-slate-300 px-3 py-2 focus:border-blue-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Work Email</label>
+                <input type="email" id="chat-emp-email" placeholder="name@flowdesk.com"
+                  class="w-full border border-slate-300 px-3 py-2 focus:border-blue-500 outline-none">
+              </div>
+              <button onclick="authenticateChat()"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 border border-blue-700 mt-2 transition-colors">
+                Authenticate & Enter
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Interface (Hidden initially) -->
+        <div id="chat-interface" class="bg-white border border-slate-200 shadow-sm flex h-full hidden max-w-6xl">
+          <!-- Chat Sidebar -->
+          <div class="w-64 border-r border-slate-200 flex flex-col hidden sm:flex bg-slate-50">
+            <div class="p-4 border-b border-slate-200">
+              <h2 class="font-bold text-slate-900">Channels</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto py-2">
+              <a href="#" class="block px-4 py-2 text-blue-700 bg-blue-50 border-l-2 border-blue-600 font-medium">#
+                general-team</a>
+              <a href="#"
+                class="block px-4 py-2 text-slate-600 hover:bg-white hover:text-blue-600 border-l-2 border-transparent transition-colors">#
+                development</a>
+            </div>
+          </div>
+          <!-- Chat Main Area -->
+          <div class="flex-1 flex flex-col bg-white min-w-0">
+            <div class="h-14 border-b border-slate-200 flex items-center px-6 justify-between bg-white shrink-0">
+              <div>
+                <h2 class="font-bold text-slate-900"># general-team</h2>
+              </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-6" id="chat-messages">
+              <div class="text-center text-xs text-slate-400 my-4">You joined the chat</div>
+            </div>
+            <div class="p-4 border-t border-slate-200 bg-slate-50 shrink-0">
+              <div class="flex gap-2">
+                <input type="text" id="chat-input"
+                  class="flex-1 border border-slate-300 bg-white px-4 py-2.5 focus:border-blue-500 focus:outline-none transition-colors"
+                  placeholder="Message #general-team..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 font-bold transition-colors border border-blue-700">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. Call Rooms Section -->
+      <section id="section-calls" class="section-content hidden fade-in">
+        <div class="mb-5">
+          <h1 class="text-2xl font-bold text-slate-900">Employee Call Center</h1>
+          <p class="text-slate-500 mt-1">Start secure audio or video calls with online managers and teammates.</p>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 max-w-7xl">
+          <div class="xl:col-span-4 bg-white border border-slate-200 shadow-sm flex flex-col min-h-[520px]">
+            <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <div>
+                <h2 class="font-bold text-slate-900">Available People</h2>
+                <p class="text-xs text-slate-500 mt-1">Click audio or video to call.</p>
+              </div>
+              <span class="text-xs font-bold text-blue-600" id="call-online-count">0 online</span>
+            </div>
+            <div class="flex-1 overflow-y-auto divide-y divide-slate-100" id="call-user-list">
+              <div class="p-4 text-sm text-slate-400">Waiting for realtime connection...</div>
+            </div>
+          </div>
+
+          <div class="xl:col-span-8 bg-white border border-slate-200 shadow-sm min-h-[520px] flex flex-col"
+            id="call-console-panel">
+            <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-3">
+              <div>
+                <h2 class="font-bold text-slate-900" id="call-panel-title">No Active Call</h2>
+                <p class="text-xs text-slate-500 mt-1" id="call-panel-status">Choose someone online to start.</p>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="connectCall('audio')"
+                  class="bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 px-3 py-2 text-xs font-bold transition-colors">
+                  <i class="fas fa-phone mr-1"></i> Audio
+                </button>
+                <button onclick="connectCall('video')"
+                  class="bg-blue-600 border border-blue-700 text-white hover:bg-blue-700 px-3 py-2 text-xs font-bold transition-colors">
+                  <i class="fas fa-video mr-1"></i> Video
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-slate-900 flex-1">
+              <div
+                class="relative bg-black border border-slate-700 min-h-[260px] flex items-center justify-center overflow-hidden">
+                <video id="remote-video" autoplay playsinline class="w-full h-full object-cover"></video>
+                <div class="absolute top-3 left-3 bg-slate-900/80 text-white text-xs font-bold px-2 py-1">Remote</div>
+                <div class="absolute text-slate-400 text-sm" id="remote-video-placeholder">Waiting for peer...</div>
+              </div>
+              <div
+                class="relative bg-black border border-slate-700 min-h-[260px] flex items-center justify-center overflow-hidden">
+                <video id="local-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                <div class="absolute top-3 left-3 bg-slate-900/80 text-white text-xs font-bold px-2 py-1">You</div>
+                <div class="absolute text-slate-400 text-sm" id="local-video-placeholder">Camera preview</div>
+              </div>
+            </div>
+            <div class="p-4 border-t border-slate-200 bg-white flex flex-wrap items-center justify-center gap-2">
+              <button onclick="toggleMute()" id="mute-call-btn"
+                class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 text-sm font-bold transition-colors">
+                <i class="fas fa-microphone mr-2"></i>Mute
+              </button>
+              <button onclick="toggleCamera()" id="camera-call-btn"
+                class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 text-sm font-bold transition-colors">
+                <i class="fas fa-video mr-2"></i>Camera
+              </button>
+              <button onclick="endCurrentCall()"
+                class="bg-red-600 border border-red-700 text-white hover:bg-red-700 px-5 py-2 text-sm font-bold transition-colors">
+                <i class="fas fa-phone-slash mr-2"></i>End Call
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. Quick Notes Section -->
+      <section id="section-notes" class="section-content hidden fade-in h-full flex flex-col">
+        <div class="mb-5 shrink-0">
+          <h1 class="text-2xl font-bold text-slate-900">Quick Notes</h1>
+          <p class="text-slate-500 mt-1">Personal scratchpad for daily reminders and thoughts.</p>
+        </div>
+
+        <div class="bg-white border border-slate-200 shadow-sm flex-1 flex flex-col p-1 max-w-6xl w-full mx-auto">
+          <textarea id="personal-notes"
+            class="flex-1 w-full p-6 bg-slate-50 text-slate-800 border-none outline-none resize-none focus:bg-white transition-colors placeholder-slate-400"
+            placeholder="Type your notes here... (Saves automatically)"></textarea>
+          <div class="p-4 border-t border-slate-200 bg-white flex justify-end shrink-0">
+            <button onclick="saveNotes()"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 font-bold transition-colors border border-blue-700">Save
+              Notes</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. Announcements Section -->
+      <section id="section-announcements" class="section-content hidden fade-in">
+        <div class="mb-5">
+          <h1 class="text-2xl font-bold text-slate-900">Company Announcements</h1>
+          <p class="text-slate-500 mt-1">Important updates and notifications from management.</p>
+        </div>
+        <div class="space-y-4 max-w-4xl">
+          <div class="bg-white border border-slate-200 shadow-sm divide-y divide-slate-200"
+            id="employee-notification-list"></div>
+          <div class="bg-white border-l-4 border-blue-600 border-y border-r border-slate-200 p-5 shadow-sm">
+            <div class="flex items-start gap-4">
+              <div class="mt-1 text-blue-600"><i class="fas fa-bullhorn text-xl"></i></div>
+              <div>
+                <h3 class="font-bold text-slate-900 text-lg">Weekly All-Hands Meeting</h3>
+                <div class="text-xs text-slate-400 mb-2">Posted today by Management</div>
+                <p class="text-slate-600">Please be reminded that our weekly all-hands meeting will take place this
+                  Friday at 10:00 AM.</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white border border-slate-200 p-5 shadow-sm">
+            <div class="flex items-start gap-4">
+              <div class="mt-1 text-slate-400"><i class="fas fa-server text-xl"></i></div>
+              <div>
+                <h3 class="font-bold text-slate-900 text-lg">Scheduled Server Maintenance</h3>
+                <div class="text-xs text-slate-400 mb-2">Posted yesterday by IT Dept</div>
+                <p class="text-slate-600">The staging servers will undergo routine maintenance this weekend starting
+                  Saturday at 11:00 PM. Please save all work beforehand.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. Company Suite Section -->
+      <section id="section-company-suite" class="section-content hidden fade-in">
+        <div class="mb-5">
+          <h1 class="text-2xl font-bold text-slate-900">Company Suite</h1>
+          <p class="text-slate-500 mt-1">Attendance, leave, files, meetings, profile, and AI tools.</p>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 max-w-7xl">
+          <div class="bg-white border border-slate-200 shadow-sm p-5">
+            <h2 class="font-bold text-slate-900 mb-3">Attendance</h2>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+              <button onclick="advancedCheckIn()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 border border-blue-700">Check In</button>
+              <button onclick="advancedCheckOut()" class="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2 border border-slate-300">Check Out</button>
+            </div>
+            <div id="advanced-attendance-summary" class="text-sm text-slate-600 bg-slate-50 border border-slate-200 p-3">Loading attendance...</div>
+            <div id="advanced-attendance-history" class="mt-3 max-h-44 overflow-y-auto divide-y divide-slate-200"></div>
+          </div>
+
+          <div class="bg-white border border-slate-200 shadow-sm p-5">
+            <h2 class="font-bold text-slate-900 mb-3">Leave Request</h2>
+            <select id="advanced-leave-type" class="w-full border border-slate-300 px-3 py-2 bg-white mb-2">
+              <option>Sick Leave</option>
+              <option>Casual Leave</option>
+              <option>Emergency Leave</option>
+            </select>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <input id="advanced-leave-start" type="date" class="border border-slate-300 px-3 py-2">
+              <input id="advanced-leave-end" type="date" class="border border-slate-300 px-3 py-2">
+            </div>
+            <textarea id="advanced-leave-reason" rows="3" placeholder="Leave reason" class="w-full border border-slate-300 px-3 py-2 mb-2"></textarea>
+            <button onclick="applyAdvancedLeave()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 font-bold border border-blue-700">Apply Leave</button>
+            <div id="advanced-leave-list" class="mt-3 max-h-44 overflow-y-auto divide-y divide-slate-200"></div>
+          </div>
+
+          <div class="bg-white border border-slate-200 shadow-sm p-5">
+            <h2 class="font-bold text-slate-900 mb-3">Performance</h2>
+            <canvas id="employee-performance-chart" height="150"></canvas>
+            <div id="advanced-performance-list" class="mt-3 max-h-40 overflow-y-auto divide-y divide-slate-200"></div>
+          </div>
+
+          <div class="bg-white border border-slate-200 shadow-sm p-5">
+            <h2 class="font-bold text-slate-900 mb-3">Shared Files</h2>
+            <form id="employee-file-form" onsubmit="uploadAdvancedFile(event)" class="flex gap-2 mb-3">
+              <input type="file" name="file" class="flex-1 border border-slate-300 px-3 py-2">
+              <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 font-bold border border-blue-700">Upload</button>
+            </form>
+            <div id="advanced-file-list" class="max-h-48 overflow-y-auto divide-y divide-slate-200"></div>
+          </div>
+
+          <div class="bg-white border border-slate-200 shadow-sm p-5">
+            <h2 class="font-bold text-slate-900 mb-3">Meetings</h2>
+            <div id="advanced-meeting-list" class="max-h-56 overflow-y-auto divide-y divide-slate-200"></div>
+          </div>
+
+          <div class="bg-white border border-slate-200 shadow-sm p-5">
+            <h2 class="font-bold text-slate-900 mb-3">AI Assistant</h2>
+            <textarea id="employee-ai-prompt" rows="4" placeholder="Ask for task suggestions or productivity advice..." class="w-full border border-slate-300 px-3 py-2 mb-2"></textarea>
+            <button onclick="askEmployeeAI()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 font-bold border border-blue-700">Ask AI</button>
+            <div id="employee-ai-response" class="mt-3 text-sm text-slate-600 bg-slate-50 border border-slate-200 p-3">AI response appears here.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. Settings Section -->
+      <section id="section-settings" class="section-content hidden fade-in">
+        <div class="mb-5">
+          <h1 class="text-2xl font-bold text-slate-900">Account Settings</h1>
+          <p class="text-slate-500 mt-1">Manage your workspace preferences.</p>
+        </div>
+
+        <div class="bg-white border border-slate-200 shadow-sm max-w-2xl">
+          <div class="p-6 border-b border-slate-200">
+            <h3 class="font-bold text-slate-900 text-lg mb-4">Status & Visibility</h3>
+            <div class="flex items-center justify-between py-3">
+              <div>
+                <div class="font-medium text-slate-800">Show as Online</div>
+                <div class="text-xs text-slate-500">Let coworkers know you are active.</div>
+              </div>
+              <button id="toggle-online-btn" onclick="toggleOnlineStatus()"
+                class="w-12 h-6 bg-blue-600 relative transition-colors duration-300">
+                <span
+                  class="absolute right-1 top-1 bg-white w-4 h-4 shadow-sm transition-all duration-300 transform"></span>
+              </button>
+            </div>
+          </div>
+          <div class="p-6 border-b border-slate-200">
+            <h3 class="font-bold text-slate-900 text-lg mb-4">Notifications</h3>
+            <div class="flex items-center justify-between py-3 border-b border-slate-100">
+              <div>
+                <div class="font-medium text-slate-800">Email Notifications</div>
+                <div class="text-xs text-slate-500">Receive daily summary emails.</div>
+              </div>
+              <button onclick="toggleSetting(this)"
+                class="w-12 h-6 bg-blue-600 relative transition-colors duration-300">
+                <span
+                  class="absolute right-1 top-1 bg-white w-4 h-4 shadow-sm transition-all duration-300 transform"></span>
+              </button>
+            </div>
+            <div class="flex items-center justify-between py-3">
+              <div>
+                <div class="font-medium text-slate-800">Desktop Alerts</div>
+                <div class="text-xs text-slate-500">Show popups for new messages.</div>
+              </div>
+              <button onclick="toggleSetting(this)"
+                class="w-12 h-6 bg-slate-300 relative transition-colors duration-300">
+                <span
+                  class="absolute left-1 top-1 bg-white w-4 h-4 shadow-sm transition-all duration-300 transform"></span>
+              </button>
+            </div>
+          </div>
+          <div class="p-6">
+            <h3 class="font-bold text-slate-900 text-lg mb-4">Security</h3>
+            <button
+              class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-6 py-2.5 font-bold transition-colors shadow-sm"
+              onclick="showToast('Password reset link sent to email')">
+              Change Password
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modals Overlay Container -->
+
+  <!-- Profile Modal -->
+  <div id="profile-modal" class="fixed inset-0 modal-bg z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 shadow-xl w-full max-w-md">
+      <div class="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50">
+        <h3 class="font-bold text-slate-900 text-lg">Employee Profile</h3>
+        <button onclick="closeModals()" class="text-slate-400 hover:text-slate-700"><i
+            class="fas fa-times text-lg"></i></button>
+      </div>
+      <div class="p-6 flex flex-col items-center border-b border-slate-100">
+        <img src="https://ui-avatars.com/api/?name=Janam+Jain&background=f1f5f9&color=2563eb&bold=true&size=128"
+          alt="Profile" class="w-24 h-24 border-2 border-slate-200 object-cover mb-4">
+        <h2 class="text-xl font-bold text-slate-900">Janam Jain</h2>
+        <p class="text-slate-500 text-sm mb-1">Developer & Designer</p>
+        <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 border border-blue-200 font-bold">EMP-1088</span>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Email</label>
+          <div class="text-slate-800 font-medium">janam.j@flowdesk.com</div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Department</label>
+          <div class="text-slate-800 font-medium">Engineering</div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Location</label>
+          <div class="text-slate-800 font-medium">Mumbai, Maharashtra</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call Room Auth Modal -->
+  <div id="call-auth-modal" class="fixed inset-0 modal-bg z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 shadow-xl w-full max-w-sm text-center p-8">
+      <div
+        class="w-16 h-16 bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mx-auto mb-4 border border-blue-100">
+        <i class="fas fa-headset"></i>
+      </div>
+      <h2 class="text-xl font-bold text-slate-900 mb-2">Join Call Room</h2>
+      <p class="text-slate-500 text-sm mb-6" id="call-room-name-display">Authenticating...</p>
+
+      <div class="space-y-4 text-left">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Employee ID</label>
+          <input type="text" placeholder="e.g. EMP-1088"
+            class="w-full border border-slate-300 px-3 py-2 focus:border-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Work Email</label>
+          <input type="email" placeholder="janam@flowdesk.com"
+            class="w-full border border-slate-300 px-3 py-2 focus:border-blue-500 outline-none">
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button onclick="closeModals()"
+            class="flex-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold py-2.5 transition-colors">Cancel</button>
+          <button onclick="connectCall('audio')"
+            class="flex-1 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 font-bold py-2.5 transition-colors">Audio</button>
+          <button onclick="connectCall('video')"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 border border-blue-700 transition-colors">Video</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar Note Promt Modal -->
+  <div id="calendar-note-modal" class="fixed inset-0 modal-bg z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 shadow-xl w-full max-w-md p-6">
+      <h3 class="font-bold text-slate-900 text-lg mb-2" id="cal-note-title">Note for Day</h3>
+
+      <label class="block text-xs font-bold text-slate-700 mb-1 mt-4">Reminder Time (Optional)</label>
+      <input type="time" id="cal-note-time"
+        class="w-full border border-slate-300 p-2 outline-none focus:border-blue-500 mb-4">
+
+      <label class="block text-xs font-bold text-slate-700 mb-1">Announcement / Note</label>
+      <textarea id="cal-note-input"
+        class="w-full border border-slate-300 p-3 h-24 outline-none focus:border-blue-500 mb-4"
+        placeholder="Type reminder here..."></textarea>
+
+      <div class="flex justify-end gap-2">
+        <button onclick="deleteCalendarNote()"
+          class="bg-white border border-red-300 px-4 py-2 text-red-600 hover:bg-red-50 font-bold mr-auto hidden"
+          id="cal-note-delete-btn">Delete</button>
+        <button onclick="closeModals()"
+          class="bg-white border border-slate-300 px-4 py-2 text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
+        <button onclick="saveCalendarNote()"
+          class="bg-blue-600 border border-blue-700 px-4 py-2 text-white hover:bg-blue-700 font-bold">Save Note</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee Directory Modal -->
+  <div id="employee-directory-modal" class="fixed inset-0 modal-bg z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 shadow-xl w-full max-w-2xl flex flex-col max-h-[80vh]">
+      <div class="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50 shrink-0">
+        <h3 class="font-bold text-slate-900 text-lg">Employee Directory (50 Total)</h3>
+        <button onclick="closeModals()" class="text-slate-400 hover:text-slate-700"><i
+            class="fas fa-times text-lg"></i></button>
+      </div>
+      <div class="p-4 bg-white border-b border-slate-200 shrink-0 flex gap-2">
+        <input type="text" placeholder="Search employees..."
+          class="w-full border border-slate-300 px-4 py-2 focus:border-blue-500 outline-none">
+      </div>
+      <div class="flex-1 overflow-y-auto p-0">
+        <div class="divide-y divide-slate-200">
+          <!-- Employee Item -->
+          <div class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+            <div class="flex items-center gap-4">
+              <img src="https://ui-avatars.com/api/?name=Janam+Jain&background=f1f5f9&color=2563eb&bold=true"
+                class="w-10 h-10 border border-slate-200">
+              <div>
+                <div class="font-bold text-slate-900">Janam Jain</div>
+                <div class="text-xs text-slate-500">Developer & Designer • EMP-1088</div>
+              </div>
+            </div>
+            <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 border border-blue-200 font-bold">Online</span>
+          </div>
+          <!-- Employee Item -->
+          <div class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+            <div class="flex items-center gap-4">
+              <img src="https://ui-avatars.com/api/?name=John+Doe&background=f1f5f9&color=64748b"
+                class="w-10 h-10 border border-slate-200">
+              <div>
+                <div class="font-bold text-slate-900">Jogesh jhaa</div>
+                <div class="text-xs text-slate-500">Senior Developer • EMP-1011</div>
+              </div>
+            </div>
+            <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 border border-blue-200 font-bold">Online</span>
+          </div>
+          <!-- Employee Item -->
+          <div class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+            <div class="flex items-center gap-4">
+              <img src="https://ui-avatars.com/api/?name=Alice+Smith&background=f1f5f9&color=64748b"
+                class="w-10 h-10 border border-slate-200">
+              <div>
+                <div class="font-bold text-slate-900">Hari Omm</div>
+                <div class="text-xs text-slate-500">UI/UX Designer • EMP-1090</div>
+              </div>
+            </div>
+            <span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 border border-slate-200 font-bold">Offline</span>
+          </div>
+          <!-- Employee Item -->
+          <div class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+            <div class="flex items-center gap-4">
+              <img src="https://ui-avatars.com/api/?name=Michael+Brown&background=f1f5f9&color=64748b"
+                class="w-10 h-10 border border-slate-200">
+              <div>
+                <div class="font-bold text-slate-900">Suraj Kumar</div>
+                <div class="text-xs text-slate-500">QA Engineer • EMP-1102</div>
+              </div>
+            </div>
+            <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 border border-blue-200 font-bold">Online</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Reminder Alert Modal -->
+  <div id="reminder-alert-modal" class="fixed inset-0 modal-bg z-[200] hidden flex items-center justify-center p-4">
+    <div class="bg-white border-t-4 border-blue-600 shadow-2xl w-full max-w-sm p-8 text-center">
+      <div
+        class="w-16 h-16 bg-blue-50 text-blue-600 flex items-center justify-center text-3xl mx-auto mb-4 border border-blue-100 shadow-sm animate-pulse">
+        <i class="fas fa-bell"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-slate-900 mb-2">Reminder!</h2>
+      <p class="text-slate-700 text-lg mb-8 font-medium" id="reminder-alert-text">Meeting in 5 minutes</p>
+      <button onclick="closeReminderAlert()"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 transition-colors">
+        Acknowledge
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <script>
+    // --- State Variables ---
+    let tasks = [];
+    let employeeRequests = [];
+    let employeeNotifications = [];
+    let isPunchedIn = false;
+    let isOnline = true;
+    let calActiveDay = null;
+    let calActiveMonth = null;
+    let calActiveYear = null;
+    let currentMonthOffset = 0;
+    let reminderInterval = null;
+    let realtimeSocket = null;
+    let realtimeUser = null;
+    let onlineUsers = [];
+    let activeRoomId = "general";
+    let selectedCallRoom = "General";
+    let currentCallType = "video";
+    let currentCallId = null;
+    let currentPeerId = null;
+    let pendingIncomingCall = null;
+    let pendingIceCandidates = [];
+    let peerConnection = null;
+    let localStream = null;
+    const configuration = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        {
+          urls: "turn:global.relay.metered.ca:80",
+          username: "openrelayproject",
+          credential: "openrelayproject"
+        }
+      ]
+    };
+
+    // --- Initialization ---
+    window.onload = function () {
+      // Check Theme
+      if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
+      }
+
+      // Loader Animation
+      const progressBar = document.getElementById('loader-progress');
+      const loaderText = document.getElementById('loader-text');
+      const loader = document.getElementById('loader');
+
+      setTimeout(() => { progressBar.style.width = '40%'; loaderText.innerText = 'Loading workspace...'; }, 100);
+      setTimeout(() => { progressBar.style.width = '80%'; loaderText.innerText = 'Syncing data...'; }, 600);
+      setTimeout(() => { progressBar.style.width = '100%'; loaderText.innerText = 'Ready.'; }, 1000);
+
+      setTimeout(() => {
+        loader.style.opacity = '0';
+        setTimeout(() => {
+          loader.style.display = 'none';
+        }, 500); // Wait for fade transition
+      }, 1400); // Display loader for 1.4 seconds
+
+      startClock();
+      renderCalendar();
+      loadWorkspaceData();
+
+      const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', dateOptions);
+      document.getElementById('personal-notes').value = localStorage.getItem('flowdesk_notes') || '';
+      updateDashboardNotesPreview();
+
+      // Start reminder checker
+      reminderInterval = setInterval(checkReminders, 10000); // Check every 10 seconds
+      initRealtime();
+    };
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token") || localStorage.getItem("flowdesk_token") || ""}`
+      };
+    }
+
+    async function apiFetch(url, options = {}) {
+      const response = await fetch(url, {
+        ...options,
+        headers: { ...authHeaders(), ...(options.headers || {}) }
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "Request failed.");
+      return data;
+    }
+
+    async function loadWorkspaceData() {
+      try {
+        const [taskData, requestData, notificationData] = await Promise.all([
+          apiFetch("/api/tasks"),
+          apiFetch("/api/requests"),
+          apiFetch("/api/notifications")
+        ]);
+        tasks = taskData.tasks || [];
+        employeeRequests = requestData.requests || [];
+        employeeNotifications = notificationData.notifications || [];
+        renderTasks();
+        renderEmployeeRequests();
+        renderEmployeeNotifications();
+        loadAdvancedEmployeeSuite();
+      } catch (error) {
+        renderTasks();
+        showToast(error.message || "Could not load workspace data.");
+      }
+    }
+
+    // --- Theme Toggle Logic ---
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+      const icon = document.getElementById('theme-icon');
+      if (document.documentElement.classList.contains('dark')) {
+        icon.classList.remove('fa-moon');
+        icon.classList.add('fa-sun');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        icon.classList.remove('fa-sun');
+        icon.classList.add('fa-moon');
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    // --- Clock Logic ---
+    function startClock() {
+      setInterval(() => {
+        const now = new Date();
+        document.getElementById('live-clock').textContent = now.toLocaleTimeString('en-US', { hour12: true });
+      }, 1000);
+    }
+
+    // --- Navigation Logic ---
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('mobile-overlay');
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    }
+
+    function switchSection(sectionId, btnElement) {
+      document.querySelectorAll('.section-content').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById('section-' + sectionId).classList.remove('hidden');
+
+      const navBtns = document.querySelectorAll('.nav-btn');
+      navBtns.forEach(btn => {
+        btn.className = 'nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-blue-600 border-l-4 border-transparent hover:border-blue-300 font-medium transition-colors';
+      });
+
+      if (btnElement) {
+        btnElement.className = 'nav-btn flex items-center gap-3 w-full text-left px-4 py-2.5 bg-blue-50 text-blue-700 border-l-4 border-blue-600 font-semibold transition-colors';
+      }
+      if (window.innerWidth < 768) toggleSidebar();
+    }
+
+    function goToSection(sectionId) {
+      // Find corresponding nav button
+      const buttons = document.querySelectorAll('.nav-btn');
+      for (let btn of buttons) {
+        if (btn.innerText.toLowerCase().includes(sectionId.toLowerCase())) {
+          switchSection(sectionId, btn);
+          break;
+        }
+      }
+    }
+
+    // --- Task Management & Dashboard Stats ---
+    function renderTasks() {
+      const list = document.getElementById('task-list');
+      list.innerHTML = '';
+
+      let pending = 0;
+      let completed = 0;
+
+      if (!tasks.length) {
+        list.innerHTML = '<div class="p-6 text-slate-400 italic">No tasks assigned yet.</div>';
+      }
+
+      tasks.forEach(task => {
+        const done = task.done || task.status === "completed";
+        if (done) completed++; else pending++;
+
+        const iconClass = done ? 'fas fa-check-square text-blue-600' : 'far fa-square text-slate-300';
+        const textClass = done ? 'text-slate-400 line-through' : 'text-slate-900';
+        const statusLabel = (task.status || "pending").replace("_", " ");
+        const statusHtml = done
+          ? '<span class="inline-block px-2 py-1 bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200">Completed</span>'
+          : `<span class="inline-block px-2 py-1 bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">${escapeHtml(statusLabel)}</span>`;
+        const dueText = task.due || (task.due_date ? new Date(task.due_date).toLocaleString() : "No Due Date");
+        const descText = task.desc || task.description || `Priority: ${task.priority || "normal"}`;
+
+        list.innerHTML += `
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 px-4 py-3 items-center hover:bg-slate-50 transition-colors border-b border-slate-200 last:border-0">
+                        <div class="col-span-1 md:col-span-6 flex items-start gap-3">
+                            <button class="mt-0.5 hover:text-blue-600 transition-colors" onclick="toggleTask(${task.id})">
+                                <i class="${iconClass} text-lg"></i>
+                            </button>
+                            <div>
+                                <div class="font-bold task-title ${textClass}">${escapeHtml(task.text || task.title)}</div>
+                                <div class="text-xs text-slate-500 mt-1">${escapeHtml(descText)}</div>
+                            </div>
+                        </div>
+                        <div class="col-span-1 md:col-span-2 text-slate-600 text-sm">
+                            <i class="far fa-calendar-alt mr-1"></i> ${escapeHtml(dueText)}
+                        </div>
+                        <div class="col-span-1 md:col-span-2">
+                            ${statusHtml}
+                        </div>
+                        <div class="col-span-1 md:col-span-2 text-left md:text-right">
+                            <button class="text-slate-400 hover:text-blue-600 text-sm font-medium transition-colors" onclick="setTaskStatus(${task.id}, 'pending')" title="Pending"><i class="far fa-clock"></i></button>
+                            <button class="text-slate-400 hover:text-blue-600 text-sm font-medium transition-colors ml-3" onclick="setTaskStatus(${task.id}, 'in_progress')" title="In Progress"><i class="fas fa-play"></i></button>
+                            <button class="text-slate-400 hover:text-blue-600 text-sm font-medium transition-colors ml-3" onclick="setTaskStatus(${task.id}, 'completed')" title="Completed"><i class="fas fa-check"></i></button>
+                        </div>
+                    </div>
+                `;
+      });
+
+      // Update Dashboard Stats
+      document.getElementById('dash-pending-tasks').innerText = pending;
+      document.getElementById('dash-completed-tasks').innerText = completed;
+    }
+
+    function addNewTask() {
+      showToast("Only managers can assign official tasks.");
+    }
+
+    async function setTaskStatus(id, status) {
+      try {
+        const data = await apiFetch(`/api/tasks/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status })
+        });
+        tasks = tasks.map(task => task.id === id ? data.task : task);
+        renderTasks();
+        showToast("Task status updated.");
+      } catch (error) {
+        showToast(error.message || "Could not update task.");
+      }
+    }
+
+    async function completeTask(id) {
+      return setTaskStatus(id, "completed");
+    }
+
+    function toggleTask(id) {
+      const task = tasks.find(t => t.id === id);
+      if (task) setTaskStatus(id, task.status === "completed" ? "pending" : "completed");
+    }
+
+    function deleteTask(id) {
+      showToast("Ask your manager to delete assigned tasks.");
+    }
+
+    function renderEmployeeRequests() {
+      const list = document.getElementById("employee-request-list");
+      if (!list) return;
+      if (!employeeRequests.length) {
+        list.innerHTML = '<div class="p-4 text-slate-400 italic">No requests sent yet.</div>';
+        return;
+      }
+      list.innerHTML = employeeRequests.map(request => `
+        <div class="p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div class="font-bold text-slate-900">${escapeHtml(getEmployeeRequestTitle(request))}</div>
+            <span class="text-xs font-bold px-2 py-1 border ${request.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' : request.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-slate-100 text-slate-600 border-slate-200'}">${escapeHtml(request.status)}</span>
+          </div>
+          <div class="text-sm text-slate-600 mt-2">${escapeHtml(getEmployeeRequestMessage(request))}</div>
+          ${request.manager_note ? `<div class="text-xs text-slate-500 mt-2">Manager note: ${escapeHtml(request.manager_note)}</div>` : ""}
+        </div>
+      `).join("");
+    }
+
+    function getEmployeeRequestTitle(request) {
+      return request?.request_type || request?.request_title || request?.title || "Request";
+    }
+
+    function getEmployeeRequestMessage(request) {
+      return request?.details || request?.request_message || request?.description || "";
+    }
+
+    async function sendEmployeeRequest() {
+      const requestType = document.getElementById("request-type").value;
+      const details = document.getElementById("request-details").value.trim();
+      if (!details) return showToast("Please write request details.");
+      try {
+        const data = await apiFetch("/api/requests", {
+          method: "POST",
+          body: JSON.stringify({ request_type: requestType, request_title: requestType, request_message: details, details })
+        });
+        upsertEmployeeRequest(data.request);
+        document.getElementById("request-details").value = "";
+        renderEmployeeRequests();
+        showToast("Request sent to manager.");
+      } catch (error) { 
+        showToast(error.message || "Could not send request.");
+      }
+    }
+
+    function renderEmployeeNotifications() {
+      const list = document.getElementById("employee-notification-list");
+      const badge = document.getElementById("employee-notification-count");
+      const unread = employeeNotifications.filter(n => !n.is_read).length;
+      if (badge) {
+        badge.innerText = unread;
+        badge.classList.toggle("hidden", unread === 0);
+      }
+      if (!list) return;
+      if (!employeeNotifications.length) {
+        list.innerHTML = '<div class="p-4 text-slate-400 italic">No notifications yet.</div>';
+      } else {
+        list.innerHTML = employeeNotifications.map(note => `
+          <div class="p-4 ${note.is_read ? '' : 'bg-blue-50'}">
+            <div class="font-bold text-slate-900">${escapeHtml(note.title)}</div>
+            <div class="text-sm text-slate-600 mt-1">${escapeHtml(note.message)}</div>
+            <div class="text-xs text-slate-400 mt-2">${new Date(note.created_at).toLocaleString()}</div>
+          </div>
+        `).join("");
+      }
+      renderEmployeeNotificationPanel();
+    }
+
+    function renderEmployeeNotificationPanel() {
+      const panelList = document.getElementById("employee-notification-panel-list");
+      const panelCount = document.getElementById("employee-notification-panel-count");
+      const unread = employeeNotifications.filter(n => !n.is_read).length;
+      if (panelCount) {
+        panelCount.innerText = `${unread} unread`;
+      }
+      if (!panelList) return;
+      if (!employeeNotifications.length) {
+        panelList.innerHTML = '<div class="p-4 text-slate-400 italic">No notifications yet.</div>';
+        return;
+      }
+      panelList.innerHTML = employeeNotifications.map(note => `
+        <div class="p-4 border-b border-slate-200 last:border-0 ${note.is_read ? '' : 'bg-blue-50'}">
+          <div class="font-bold text-slate-900">${escapeHtml(note.title)}</div>
+          <div class="text-sm text-slate-600 mt-1">${escapeHtml(note.message)}</div>
+          <div class="text-[11px] text-slate-400 mt-2">${new Date(note.created_at).toLocaleString()}</div>
+        </div>
+      `).join("");
+    }
+
+    let employeePerformanceChart = null;
+
+    async function loadAdvancedEmployeeSuite() {
+      try {
+        const [attendanceData, leaveData, performanceData, fileData, meetingData] = await Promise.all([
+          apiFetch("/api/attendance"),
+          apiFetch("/api/leave-requests"),
+          apiFetch("/api/performance"),
+          apiFetch("/api/files"),
+          apiFetch("/api/meetings")
+        ]);
+        renderAdvancedAttendance(attendanceData);
+        renderAdvancedLeave(leaveData.leave_requests || []);
+        renderAdvancedPerformance(performanceData.reviews || [], performanceData.task_stats || []);
+        renderAdvancedFiles(fileData.files || []);
+        renderAdvancedMeetings(meetingData.meetings || []);
+      } catch (error) {
+        console.warn("Advanced suite load failed:", error.message || error);
+      }
+    }
+
+    function renderAdvancedAttendance(data) {
+      const summary = document.getElementById("advanced-attendance-summary");
+      const history = document.getElementById("advanced-attendance-history");
+      if (summary) summary.innerHTML = `<b>${data.summary?.days || 0}</b> entries · <b>${data.summary?.total_hours || 0}</b> hours · <b>${data.summary?.late_entries || 0}</b> late`;
+      if (history) history.innerHTML = (data.attendance || []).map(row => `
+        <div class="py-2 text-sm">
+          <div class="font-bold text-slate-900">${new Date(row.attendance_date).toLocaleDateString()}</div>
+          <div class="text-xs text-slate-500">${row.check_in ? new Date(row.check_in).toLocaleTimeString() : '-'} - ${row.check_out ? new Date(row.check_out).toLocaleTimeString() : 'Active'} · ${row.total_hours || 0}h</div>
+        </div>
+      `).join("") || '<div class="py-2 text-slate-400 italic">No attendance history yet.</div>';
+    }
+
+    async function advancedCheckIn() {
+      try {
+        await apiFetch("/api/attendance/check-in", { method: "POST", body: "{}" });
+        showToast("Checked in.");
+        loadAdvancedEmployeeSuite();
+      } catch (error) { showToast(error.message || "Could not check in."); }
+    }
+
+    async function advancedCheckOut() {
+      try {
+        await apiFetch("/api/attendance/check-out", { method: "POST", body: "{}" });
+        showToast("Checked out.");
+        loadAdvancedEmployeeSuite();
+      } catch (error) { showToast(error.message || "Could not check out."); }
+    }
+
+    function renderAdvancedLeave(leaves) {
+      const list = document.getElementById("advanced-leave-list");
+      if (!list) return;
+      list.innerHTML = leaves.map(leave => `
+        <div class="py-2 text-sm">
+          <div class="flex justify-between"><b>${escapeHtml(leave.leave_type)}</b><span class="text-xs font-bold">${escapeHtml(leave.status)}</span></div>
+          <div class="text-xs text-slate-500">${escapeHtml(leave.start_date)} to ${escapeHtml(leave.end_date)}</div>
+        </div>
+      `).join("") || '<div class="py-2 text-slate-400 italic">No leave records yet.</div>';
+    }
+
+    async function applyAdvancedLeave() {
+      const payload = {
+        leave_type: document.getElementById("advanced-leave-type").value,
+        start_date: document.getElementById("advanced-leave-start").value,
+        end_date: document.getElementById("advanced-leave-end").value,
+        reason: document.getElementById("advanced-leave-reason").value.trim()
+      };
+      if (!payload.start_date || !payload.end_date || !payload.reason) return showToast("Leave dates and reason are required.");
+      try {
+        await apiFetch("/api/leave-requests", { method: "POST", body: JSON.stringify(payload) });
+        document.getElementById("advanced-leave-reason").value = "";
+        showToast("Leave request submitted.");
+        loadAdvancedEmployeeSuite();
+      } catch (error) { showToast(error.message || "Could not apply leave."); }
+    }
+
+    function renderAdvancedPerformance(reviews, taskStats) {
+      const list = document.getElementById("advanced-performance-list");
+      const stats = taskStats[0] || { completed_tasks: 0, total_tasks: 0 };
+      if (list) list.innerHTML = reviews.map(review => `
+        <div class="py-2 text-sm">
+          <div class="font-bold text-slate-900">Rating ${review.rating}/5 · Score ${review.productivity_score}%</div>
+          <div class="text-xs text-slate-500">${escapeHtml(review.feedback || "No feedback")}</div>
+        </div>
+      `).join("") || '<div class="py-2 text-slate-400 italic">No feedback yet.</div>';
+      const canvas = document.getElementById("employee-performance-chart");
+      if (canvas && window.Chart) {
+        if (employeePerformanceChart) employeePerformanceChart.destroy();
+        employeePerformanceChart = new Chart(canvas, {
+          type: "doughnut",
+          data: { labels: ["Completed", "Remaining"], datasets: [{ data: [Number(stats.completed_tasks || 0), Math.max(Number(stats.total_tasks || 0) - Number(stats.completed_tasks || 0), 0)], backgroundColor: ["#2563eb", "#e2e8f0"] }] },
+          options: { plugins: { legend: { position: "bottom" } } }
+        });
+      }
+    }
+
+    function renderAdvancedFiles(files) {
+      const list = document.getElementById("advanced-file-list");
+      if (!list) return;
+      list.innerHTML = files.map(file => `
+        <div class="py-2 flex justify-between items-center gap-3 text-sm">
+          <span class="font-medium text-slate-800 truncate">${escapeHtml(file.original_name)}</span>
+          <a class="text-blue-600 font-bold" href="${escapeHtml(file.file_url)}" target="_blank">Open</a>
+        </div>
+      `).join("") || '<div class="py-2 text-slate-400 italic">No shared files yet.</div>';
+    }
+
+    async function uploadAdvancedFile(event) {
+      event.preventDefault();
+      const form = event.target;
+      const formData = new FormData(form);
+      try {
+        const response = await fetch("/api/files/upload", { method: "POST", headers: { "Authorization": `Bearer ${localStorage.getItem("token") || localStorage.getItem("flowdesk_token") || ""}` }, body: formData });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || "Upload failed.");
+        form.reset();
+        showToast("File uploaded.");
+        loadAdvancedEmployeeSuite();
+      } catch (error) { showToast(error.message || "Could not upload file."); }
+    }
+
+    function renderAdvancedMeetings(meetings) {
+      const list = document.getElementById("advanced-meeting-list");
+      if (!list) return;
+      list.innerHTML = meetings.map(meeting => `
+        <div class="py-2 text-sm flex justify-between gap-3">
+          <div><b>${escapeHtml(meeting.title)}</b><div class="text-xs text-slate-500">${meeting.starts_at ? new Date(meeting.starts_at).toLocaleString() : "Instant room"}</div></div>
+          <a class="text-blue-600 font-bold" href="${escapeHtml(meeting.meeting_url)}" target="_blank">Join</a>
+        </div>
+      `).join("") || '<div class="py-2 text-slate-400 italic">No meetings scheduled.</div>';
+    }
+
+    async function askEmployeeAI() {
+      const message = document.getElementById("employee-ai-prompt").value.trim();
+      if (!message) return showToast("Ask something first.");
+      try {
+        const data = await apiFetch("/api/ai/chat", { method: "POST", body: JSON.stringify({ message }) });
+        document.getElementById("employee-ai-response").innerText = data.reply;
+      } catch (error) { showToast(error.message || "AI assistant failed."); }
+    }
+
+    function upsertEmployeeNotification(notification) {
+      if (!notification) return;
+      const exists = employeeNotifications.some(item => String(item.id) === String(notification.id));
+      employeeNotifications = exists
+        ? employeeNotifications.map(item => String(item.id) === String(notification.id) ? notification : item)
+        : [notification, ...employeeNotifications];
+    }
+
+    function upsertEmployeeRequest(request) {
+      if (!request) return;
+      const exists = employeeRequests.some(item => String(item.id) === String(request.id));
+      employeeRequests = exists
+        ? employeeRequests.map(item => String(item.id) === String(request.id) ? request : item)
+        : [request, ...employeeRequests];
+    }
+
+    function upsertEmployeeTask(task) {
+      if (!task) return;
+      const exists = tasks.some(item => String(item.id) === String(task.id));
+      tasks = exists ? tasks.map(item => String(item.id) === String(task.id) ? task : item) : [task, ...tasks];
+    }
+
+    async function markAllEmployeeNotificationsRead() {
+      try {
+        await apiFetch("/api/notifications/read", { method: "PATCH" });
+        employeeNotifications = employeeNotifications.map(note => ({ ...note, is_read: 1 }));
+        renderEmployeeNotifications();
+        showToast("All notifications marked read.");
+      } catch (error) {
+        showToast(error.message || "Could not update notifications.");
+      }
+    }
+
+    function toggleEmployeeNotificationPanel() {
+      const panel = document.getElementById("employee-notification-panel");
+      if (!panel) return;
+      panel.classList.toggle("hidden");
+      renderEmployeeNotificationPanel();
+    }
+
+    window.addEventListener("click", (event) => {
+      const panel = document.getElementById("employee-notification-panel");
+      const button = document.getElementById("employee-notification-button");
+      if (!panel || !button) return;
+      if (panel.classList.contains("hidden")) return;
+      if (!event.target.closest("#employee-notification-panel") && !event.target.closest("#employee-notification-button")) {
+        panel.classList.add("hidden");
+      }
+    });
+
+    // --- Attendance Logic ---
+    function punchAttendance() {
+      const statusText = document.getElementById('attendance-status-text');
+      const btn = document.getElementById('punch-btn');
+      const log = document.getElementById('attendance-log');
+      const dashMyAttendance = document.getElementById('dash-my-attendance');
+      const dashPresent = document.getElementById('dash-present');
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour12: true });
+
+      if (!isPunchedIn) {
+        // Punching In
+        isPunchedIn = true;
+        statusText.innerText = `You punched in today at ${timeStr}.`;
+        btn.innerText = "PUNCH OUT";
+        btn.className = "w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 border border-slate-300 transition-colors";
+
+        log.innerHTML = `<div class="border-l-2 border-blue-600 pl-3 py-1">Punched IN at <span class="font-bold text-slate-900">${timeStr}</span></div>` + (log.innerHTML.includes('No records') ? '' : log.innerHTML);
+
+        dashMyAttendance.innerText = `Punched In (${timeStr})`;
+        dashPresent.innerText = parseInt(dashPresent.innerText) + 1; // Increase present count
+        showToast("Punched In Successfully.");
+      } else {
+        // Punching Out
+        isPunchedIn = false;
+        statusText.innerText = `You punched out today at ${timeStr}.`;
+        btn.innerText = "PUNCH IN";
+        btn.className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 border border-blue-700 transition-colors";
+
+        log.innerHTML = `<div class="border-l-2 border-slate-400 pl-3 py-1">Punched OUT at <span class="font-bold text-slate-900">${timeStr}</span></div>` + log.innerHTML;
+
+        dashMyAttendance.innerText = `Punched Out`;
+        dashPresent.innerText = parseInt(dashPresent.innerText) - 1; // Decrease present count
+        showToast("Punched Out Successfully.");
+      }
+    }
+
+    // --- Calendar Logic ---
+    function changeMonth(offset) {
+      currentMonthOffset += offset;
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      const now = new Date();
+      const targetDate = new Date(now.getFullYear(), now.getMonth() + currentMonthOffset, 1);
+
+      const currentMonth = targetDate.getMonth();
+      const currentYear = targetDate.getFullYear();
+
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      document.getElementById('cal-month-display').innerText = `${monthNames[currentMonth]} ${currentYear}`;
+
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+
+      const realToday = new Date();
+      const isCurrentMonth = realToday.getMonth() === currentMonth && realToday.getFullYear() === currentYear;
+
+      // Empty slots before first day
+      for (let i = 0; i < firstDayIndex; i++) {
+        grid.innerHTML += `<div class="calendar-day border-b border-r border-slate-200 p-2 h-20 bg-slate-50"></div>`;
+      }
+
+      let savedNotes = JSON.parse(localStorage.getItem('flowdesk_cal_notes')) || {};
+
+      for (let i = 1; i <= daysInMonth; i++) {
+        const isToday = isCurrentMonth && i === realToday.getDate();
+        const todayBg = isToday ? 'bg-blue-50 border-blue-300' : '';
+        const todayBadge = isToday ? 'bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-auto' : 'text-slate-700 text-right';
+
+        const dateKey = `${i}-${currentMonth}-${currentYear}`;
+        const noteObj = savedNotes[dateKey];
+        const noteText = noteObj ? noteObj.text : '';
+
+        grid.innerHTML += `
+                    <div class="calendar-day border-b border-r border-slate-200 p-1.5 sm:p-2 h-20 transition-colors relative ${todayBg}" onclick="openCalendarNote(${i}, ${currentMonth}, ${currentYear})">
+                        <div class="font-bold ${todayBadge}">${i}</div>
+                        <div id="cal-note-disp-${i}" class="text-[10px] text-blue-700 mt-1 leading-tight overflow-hidden text-ellipsis whitespace-nowrap">${noteText}</div>
+                    </div>
+                `;
+      }
+    }
+
+    function openCalendarNote(day, month, year) {
+      calActiveDay = day;
+      calActiveMonth = month;
+      calActiveYear = year;
+
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      document.getElementById('cal-note-title').innerText = `Notes for ${monthNames[month]} ${day}, ${year}`;
+
+      const dateKey = `${day}-${month}-${year}`;
+      let savedNotes = JSON.parse(localStorage.getItem('flowdesk_cal_notes')) || {};
+
+      if (savedNotes[dateKey]) {
+        document.getElementById('cal-note-input').value = savedNotes[dateKey].text;
+        document.getElementById('cal-note-time').value = savedNotes[dateKey].time || "";
+        document.getElementById('cal-note-delete-btn').classList.remove('hidden');
+      } else {
+        document.getElementById('cal-note-input').value = "";
+        document.getElementById('cal-note-time').value = "";
+        document.getElementById('cal-note-delete-btn').classList.add('hidden');
+      }
+
+      document.getElementById('calendar-note-modal').classList.remove('hidden');
+    }
+
+    function saveCalendarNote() {
+      const text = document.getElementById('cal-note-input').value.trim();
+      const time = document.getElementById('cal-note-time').value;
+      const dateKey = `${calActiveDay}-${calActiveMonth}-${calActiveYear}`;
+
+      let savedNotes = JSON.parse(localStorage.getItem('flowdesk_cal_notes')) || {};
+
+      if (!text) {
+        delete savedNotes[dateKey];
+        showToast("Calendar note removed.");
+      } else {
+        savedNotes[dateKey] = { text: text, time: time, notified: false };
+        if (time) {
+          showToast(`Reminder scheduled for ${time}.`);
+        } else {
+          showToast("Calendar note saved.");
+        }
+      }
+
+      localStorage.setItem('flowdesk_cal_notes', JSON.stringify(savedNotes));
+
+      closeModals();
+      renderCalendar();
+    }
+
+    function deleteCalendarNote() {
+      const dateKey = `${calActiveDay}-${calActiveMonth}-${calActiveYear}`;
+      let savedNotes = JSON.parse(localStorage.getItem('flowdesk_cal_notes')) || {};
+      delete savedNotes[dateKey];
+      localStorage.setItem('flowdesk_cal_notes', JSON.stringify(savedNotes));
+      closeModals();
+      renderCalendar();
+      showToast("Calendar note deleted.");
+    }
+
+    function playAlertSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime); // High pitch beep
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      } catch (e) {
+        console.log("Audio alert not supported or blocked.");
+      }
+    }
+
+    function checkReminders() {
+      const now = new Date();
+      const currentDay = now.getDate();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      // Format HH:MM
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const currentTime = `${hours}:${minutes}`;
+
+      const todayKey = `${currentDay}-${currentMonth}-${currentYear}`;
+      let savedNotes = JSON.parse(localStorage.getItem('flowdesk_cal_notes')) || {};
+
+      if (savedNotes[todayKey] && savedNotes[todayKey].time === currentTime && !savedNotes[todayKey].notified) {
+        // Show Prominent Alert Modal
+        document.getElementById('reminder-alert-text').innerText = savedNotes[todayKey].text;
+        document.getElementById('reminder-alert-modal').classList.remove('hidden');
+        playAlertSound();
+
+        savedNotes[todayKey].notified = true; // Mark as notified to prevent repeating
+        localStorage.setItem('flowdesk_cal_notes', JSON.stringify(savedNotes));
+        renderCalendar();
+      }
+    }
+
+    function closeReminderAlert() {
+      document.getElementById('reminder-alert-modal').classList.add('hidden');
+    }
+
+    // --- Realtime Chat & Calls ---
+    function initRealtime() {
+      if (typeof io === "undefined") {
+        showToast("Realtime server is unavailable.");
+        return;
+      }
+
+      realtimeSocket = io();
+      realtimeSocket.on("connect", () => {
+        realtimeSocket.emit("user:register", {
+          username: "Janam Jain",
+          role: "employee",
+          token: localStorage.getItem("token") || localStorage.getItem("flowdesk_token")
+        });
+      });
+      realtimeSocket.on("disconnect", () => {
+        if (currentCallId) endCurrentCall(false);
+      });
+
+      realtimeSocket.on("user:registered", ({ user, onlineUsers: users }) => {
+        realtimeUser = user;
+        onlineUsers = users || [];
+        renderOnlineUsers();
+      });
+      realtimeSocket.on("presence:update", (users) => {
+        onlineUsers = users || [];
+        renderOnlineUsers();
+      });
+      realtimeSocket.on("message:receive", renderChatMessage);
+      realtimeSocket.on("notification:new", (notification) => {
+        upsertEmployeeNotification(notification);
+        renderEmployeeNotifications();
+        showToast(notification.message || notification.title || "New notification");
+      });
+      realtimeSocket.on("new_notification", (notification) => {
+        upsertEmployeeNotification(notification);
+        renderEmployeeNotifications();
+        showToast(notification.message || notification.title || "New notification");
+      });
+      realtimeSocket.on("request:changed", (request) => {
+        upsertEmployeeRequest(request);
+        renderEmployeeRequests();
+      });
+      realtimeSocket.on("request:decision_result", (request) => {
+        upsertEmployeeRequest(request);
+        renderEmployeeRequests();
+      });
+      realtimeSocket.on("request_accepted", (request) => {
+        upsertEmployeeRequest(request);
+        renderEmployeeRequests();
+        showToast("Your request has been approved by manager.");
+      });
+      realtimeSocket.on("request_rejected", (request) => {
+        upsertEmployeeRequest(request);
+        renderEmployeeRequests();
+        showToast("Your request has been rejected by manager.");
+      });
+      realtimeSocket.on("task:changed", (task) => {
+        upsertEmployeeTask(task);
+        renderTasks();
+      });
+      realtimeSocket.on("task:deleted", ({ id }) => {
+        tasks = tasks.filter(task => task.id !== id);
+        renderTasks();
+      });
+      realtimeSocket.on("leave:updated", () => loadAdvancedEmployeeSuite());
+      realtimeSocket.on("performance:updated", () => loadAdvancedEmployeeSuite());
+      realtimeSocket.on("meeting:new", (meeting) => {
+        showToast(`New meeting: ${meeting.title}`);
+        loadAdvancedEmployeeSuite();
+      });
+      realtimeSocket.on("file:uploaded", () => loadAdvancedEmployeeSuite());
+      realtimeSocket.on("call:incoming", handleIncomingCall);
+      realtimeSocket.on("call:ringing", ({ to }) => showToast(`Calling ${to}...`));
+      realtimeSocket.on("call:accepted", async ({ callId }) => {
+        currentCallId = callId;
+        await startPeerConnection(true);
+      });
+      realtimeSocket.on("webrtc:offer", handleOffer);
+      realtimeSocket.on("webrtc:answer", handleAnswer);
+      realtimeSocket.on("webrtc:ice", handleIce);
+      realtimeSocket.on("offer", handleOffer);
+      realtimeSocket.on("answer", handleAnswer);
+      realtimeSocket.on("ice-candidate", handleIce);
+      realtimeSocket.on("call:ended", () => endCurrentCall(false));
+      realtimeSocket.on("call-ended", () => endCurrentCall(false));
+      realtimeSocket.on("call:error", ({ message }) => showToast(message || "Call failed."));
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement("div");
+      div.textContent = value || "";
+      return div.innerHTML;
+    }
+
+    function getInitials(name) {
+      return String(name || "FD")
+        .trim()
+        .split(/\s+/)
+        .map(part => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
+    }
+
+    function renderOnlineUsers() {
+      const sidebar = document.querySelector("#chat-interface .w-64 .flex-1");
+      const people = onlineUsers.filter(user => user.id !== realtimeUser?.id);
+      if (sidebar) {
+        const peopleHtml = people.map(user => `
+          <button class="block w-full text-left px-4 py-2 text-slate-600 hover:bg-white hover:text-blue-600 border-l-2 border-transparent transition-colors"
+            onclick="startDirectCall('${user.id}', 'video')">
+            <span class="font-medium">${escapeHtml(user.username)}</span>
+            <span class="text-[10px] uppercase text-slate-400 ml-1">${escapeHtml(user.role)}</span>
+          </button>
+        `).join("");
+        sidebar.innerHTML = `
+          <a href="#" class="block px-4 py-2 text-blue-700 bg-blue-50 border-l-2 border-blue-600 font-medium"># general-team</a>
+          <div class="px-4 pt-4 pb-2 text-[10px] font-bold uppercase text-slate-400">Online for calls</div>
+          ${peopleHtml || '<div class="px-4 py-2 text-xs text-slate-400">No one else online yet.</div>'}
+        `;
+      }
+      renderCallDirectory();
+    }
+
+    function renderCallDirectory() {
+      const list = document.getElementById("call-user-list");
+      const count = document.getElementById("call-online-count");
+      if (!list) return;
+      const people = onlineUsers.filter(user => user.id !== realtimeUser?.id);
+      if (count) count.innerText = `${people.length} online`;
+      if (!people.length) {
+        list.innerHTML = '<div class="p-4 text-sm text-slate-400">No manager or teammate is online yet. Open the manager page in another tab to test.</div>';
+        return;
+      }
+      list.innerHTML = people.map(user => `
+        <div class="p-4 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 border border-slate-200 bg-slate-100 text-slate-700 flex items-center justify-center font-bold shrink-0">${getInitials(user.username)}</div>
+            <div class="min-w-0">
+              <div class="font-bold text-slate-900 truncate">${escapeHtml(user.username)}</div>
+              <div class="text-xs text-slate-500 uppercase">${escapeHtml(user.role)}</div>
+            </div>
+          </div>
+          <div class="flex gap-1 shrink-0">
+            <button onclick="startDirectCall('${user.id}', 'audio')" title="Audio call"
+              class="w-9 h-9 bg-white border border-slate-300 text-slate-600 hover:text-blue-600 hover:border-blue-600">
+              <i class="fas fa-phone"></i>
+            </button>
+            <button onclick="startDirectCall('${user.id}', 'video')" title="Video call"
+              class="w-9 h-9 bg-blue-600 border border-blue-700 text-white hover:bg-blue-700">
+              <i class="fas fa-video"></i>
+            </button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderChatMessage(message) {
+      if (message.roomId !== activeRoomId) return;
+      const chatContainer = document.getElementById('chat-messages');
+      if (!chatContainer) return;
+      if (message.isSystem) {
+        chatContainer.insertAdjacentHTML('beforeend', `<div class="text-center text-xs text-slate-400 my-4">${escapeHtml(message.text)}</div>`);
+      } else {
+        const isMine = message.isMine || message.sender?.id === realtimeUser?.id || (message.sender?.userId && String(message.sender.userId) === String(realtimeUser?.userId));
+        const timeString = new Date(message.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const senderName = message.sender?.username || 'Team Member';
+        chatContainer.insertAdjacentHTML('beforeend', `
+          <div class="flex ${isMine ? 'justify-start' : 'justify-end'} fade-in">
+            <div class="flex gap-3 max-w-[82%] ${isMine ? '' : 'flex-row-reverse text-right'}">
+              <div class="w-10 h-10 border border-slate-200 bg-slate-100 text-slate-700 flex items-center justify-center font-bold shrink-0">${getInitials(senderName)}</div>
+              <div>
+                <div class="flex items-baseline gap-2 ${isMine ? '' : 'justify-end'}">
+                  <span class="font-bold text-slate-900">${escapeHtml(senderName)}${isMine ? ' <span class="text-[10px] text-blue-600 ml-1">YOU</span>' : ''}</span>
+                <span class="text-xs text-slate-400">${timeString}</span>
+              </div>
+                <div class="text-slate-700 mt-1 ${isMine ? 'bg-blue-50 border-blue-100' : 'bg-slate-50 border-slate-100'} border p-3 text-left break-words">${escapeHtml(message.text)}</div>
+              </div>
+            </div>
+          </div>
+        `);
+      }
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function ensureCallPanel() {
+      const consolePanel = document.getElementById("call-console-panel");
+      if (consolePanel) return consolePanel;
+      let panel = document.getElementById("live-call-panel");
+      if (panel) return panel;
+      panel = document.createElement("div");
+      panel.id = "live-call-panel";
+      panel.className = "fixed bottom-4 left-4 right-4 md:left-auto md:w-[520px] bg-white border border-slate-300 shadow-xl z-[120] hidden";
+      panel.innerHTML = `
+        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
+          <div>
+            <div class="font-bold text-slate-900" id="call-panel-title">FlowDesk Call</div>
+            <div class="text-xs text-slate-500" id="call-panel-status">Connecting...</div>
+          </div>
+          <button onclick="endCurrentCall()" class="bg-red-600 text-white px-3 py-2 font-bold text-xs">End</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-slate-900">
+          <video id="remote-video" autoplay playsinline class="w-full bg-black min-h-[180px] object-cover"></video>
+          <video id="local-video" autoplay playsinline muted class="w-full bg-black min-h-[180px] object-cover"></video>
+        </div>
+      `;
+      document.body.appendChild(panel);
+      return panel;
+    }
+
+    function showCallPanel(status) {
+      const panel = ensureCallPanel();
+      panel.classList.remove("hidden");
+      goToSection("calls");
+      document.getElementById("call-panel-title").innerText = selectedCallRoom;
+      document.getElementById("call-panel-status").innerText = status;
+      updateCallPlaceholders();
+    }
+
+    function updateCallPlaceholders() {
+      const localPlaceholder = document.getElementById("local-video-placeholder");
+      const remotePlaceholder = document.getElementById("remote-video-placeholder");
+      const remoteVideo = document.getElementById("remote-video");
+      const localHasVideo = !!localStream?.getVideoTracks().length;
+      const remoteHasVideo = !!remoteVideo?.srcObject?.getVideoTracks?.().length;
+      if (localPlaceholder) {
+        localPlaceholder.innerText = localStream && !localHasVideo ? "Audio call active" : "Camera preview";
+        localPlaceholder.classList.toggle("hidden", localHasVideo);
+      }
+      if (remotePlaceholder) {
+        remotePlaceholder.innerText = remoteVideo?.srcObject && !remoteHasVideo ? "Remote audio connected" : "Waiting for peer...";
+        remotePlaceholder.classList.toggle("hidden", remoteHasVideo);
+      }
+    }
+
+    async function getCallStream(videoEnabled) {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        const message = window.isSecureContext
+          ? "This browser does not support camera or microphone access."
+          : "Camera and microphone require HTTPS or localhost.";
+        document.getElementById("call-panel-status").innerText = message;
+        showToast(message);
+        throw new Error(message);
+      }
+      if (localStream) {
+        const hasVideo = localStream.getVideoTracks().length > 0;
+        if (!videoEnabled || hasVideo) return localStream;
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: videoEnabled });
+        const localVideo = document.getElementById("local-video");
+        if (localVideo) {
+          localVideo.srcObject = localStream;
+          await localVideo.play().catch(() => { });
+        }
+        updateCallPlaceholders();
+        return localStream;
+      } catch (error) {
+        const message = error.name === "NotAllowedError" || error.name === "SecurityError"
+          ? "Camera or microphone permission was blocked."
+          : error.name === "NotFoundError"
+            ? "Camera or microphone device was not found."
+            : "Camera or microphone is not available.";
+        document.getElementById("call-panel-status").innerText = message;
+        showToast(message);
+        throw error;
+      }
+    }
+
+    async function startPeerConnection(isCaller) {
+      showCallPanel("Connected");
+      if (peerConnection) peerConnection.close();
+      pendingIceCandidates = [];
+      peerConnection = new RTCPeerConnection(configuration);
+      peerConnection.onconnectionstatechange = () => {
+        document.getElementById("call-panel-status").innerText = `Connection: ${peerConnection.connectionState}`;
+        if (["failed", "closed"].includes(peerConnection.connectionState)) updateCallPlaceholders();
+      };
+      peerConnection.oniceconnectionstatechange = () => {
+        if (peerConnection?.iceConnectionState === "failed") {
+          peerConnection.restartIce?.();
+          document.getElementById("call-panel-status").innerText = "Reconnecting media...";
+        }
+      };
+      peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+          realtimeSocket.emit("ice-candidate", { callId: currentCallId, candidate: event.candidate });
+        }
+      };
+      peerConnection.ontrack = event => {
+        const remoteVideo = document.getElementById("remote-video");
+        if (remoteVideo && event.streams[0]) {
+          remoteVideo.srcObject = event.streams[0];
+          remoteVideo.play().catch(() => { });
+        }
+        updateCallPlaceholders();
+      };
+      const stream = await getCallStream(currentCallType === "video");
+      stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+      if (isCaller) {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        realtimeSocket.emit("offer", { callId: currentCallId, sdp: offer });
+      }
+    }
+
+    function getPreferredCallTarget() {
+      return onlineUsers.find(user => user.id !== realtimeUser?.id && user.role === "manager")
+        || onlineUsers.find(user => user.id !== realtimeUser?.id);
+    }
+
+    function startDirectCall(targetId, callType = "video") {
+      const target = onlineUsers.find(user => user.id === targetId);
+      if (!target) return showToast("That user is not online.");
+      if (currentCallId || peerConnection) endCurrentCall(false);
+      selectedCallRoom = `Call with ${target.username}`;
+      currentCallType = callType;
+      currentPeerId = target.id;
+      showCallPanel("Ringing...");
+      realtimeSocket.emit("call:initiate", { targetId: target.id, callType });
+    }
+
+    function handleIncomingCall({ callId, from, callType }) {
+      selectedCallRoom = `Call with ${from.username}`;
+      currentCallType = callType;
+      currentCallId = callId;
+      currentPeerId = from.id;
+      pendingIncomingCall = { callId, from, callType };
+      showIncomingCallPrompt();
+    }
+
+    function showIncomingCallPrompt() {
+      let prompt = document.getElementById("incoming-call-prompt");
+      if (!prompt) {
+        prompt = document.createElement("div");
+        prompt.id = "incoming-call-prompt";
+        prompt.className = "fixed top-4 right-4 bg-white border border-slate-300 shadow-xl z-[130] w-[320px]";
+        document.body.appendChild(prompt);
+      }
+      prompt.innerHTML = `
+        <div class="p-4 border-b border-slate-200 bg-slate-50">
+          <div class="text-xs font-bold uppercase text-blue-600">${escapeHtml(pendingIncomingCall.callType)} call</div>
+          <div class="font-bold text-slate-900 mt-1">${escapeHtml(pendingIncomingCall.from.username)}</div>
+          <div class="text-xs text-slate-500 mt-1">Incoming FlowDesk call</div>
+        </div>
+        <div class="p-3 flex gap-2">
+          <button onclick="declineIncomingCall()" class="flex-1 bg-white border border-slate-300 text-slate-700 font-bold py-2">Decline</button>
+          <button onclick="acceptIncomingCall()" class="flex-1 bg-blue-600 border border-blue-700 text-white font-bold py-2">Accept</button>
+        </div>
+      `;
+    }
+
+    function acceptIncomingCall() {
+      if (!pendingIncomingCall) return;
+      showCallPanel("Connecting...");
+      realtimeSocket.emit("call:accept", { callId: pendingIncomingCall.callId });
+      document.getElementById("incoming-call-prompt")?.remove();
+      pendingIncomingCall = null;
+    }
+
+    function declineIncomingCall() {
+      if (!pendingIncomingCall) return;
+      realtimeSocket.emit("call:end", { callId: pendingIncomingCall.callId });
+      document.getElementById("incoming-call-prompt")?.remove();
+      pendingIncomingCall = null;
+    }
+
+    async function handleOffer({ callId, sdp }) {
+      if (currentCallId === callId && peerConnection?.remoteDescription) return;
+      if (currentCallId && currentCallId !== callId) endCurrentCall(false);
+      currentCallId = callId;
+      await startPeerConnection(false);
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+      await flushPendingIceCandidates();
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      realtimeSocket.emit("answer", { callId, sdp: answer });
+    }
+
+    async function handleAnswer({ callId, sdp }) {
+      if (!peerConnection || (callId && currentCallId && callId !== currentCallId)) return;
+      if (peerConnection.signalingState === "stable") return;
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+      await flushPendingIceCandidates();
+    }
+
+    async function handleIce({ callId, candidate }) {
+      if (!candidate) return;
+      if (callId && currentCallId && callId !== currentCallId) return;
+      if (!peerConnection || !peerConnection.remoteDescription) {
+        pendingIceCandidates.push(candidate);
+        return;
+      }
+      try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (error) {
+        console.warn("Could not add ICE candidate", error);
+      }
+    }
+
+    async function flushPendingIceCandidates() {
+      if (!peerConnection || !peerConnection.remoteDescription) return;
+      while (pendingIceCandidates.length) {
+        const candidate = pendingIceCandidates.shift();
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (error) {
+          console.warn("Could not add queued ICE candidate", error);
+        }
+      }
+    }
+
+    function endCurrentCall(notifyPeer = true) {
+      if (notifyPeer && currentCallId && realtimeSocket?.connected) {
+        realtimeSocket.emit("call:end", { callId: currentCallId });
+        realtimeSocket.emit("call-ended", { callId: currentCallId });
+      }
+      if (peerConnection) peerConnection.close();
+      if (localStream) localStream.getTracks().forEach(track => track.stop());
+      peerConnection = null;
+      localStream = null;
+      pendingIceCandidates = [];
+      currentCallId = null;
+      currentPeerId = null;
+      const panel = document.getElementById("live-call-panel");
+      if (panel) panel.classList.add("hidden");
+      document.getElementById("incoming-call-prompt")?.remove();
+      pendingIncomingCall = null;
+      const localVideo = document.getElementById("local-video");
+      const remoteVideo = document.getElementById("remote-video");
+      if (localVideo) localVideo.srcObject = null;
+      if (remoteVideo) remoteVideo.srcObject = null;
+      document.getElementById("call-panel-title").innerText = "No Active Call";
+      document.getElementById("call-panel-status").innerText = "Choose someone online to start.";
+      updateCallPlaceholders();
+    }
+
+    function toggleMute() {
+      const audioTrack = localStream?.getAudioTracks()[0];
+      if (!audioTrack) return showToast("No active microphone yet.");
+      audioTrack.enabled = !audioTrack.enabled;
+      const btn = document.getElementById("mute-call-btn");
+      btn.innerHTML = audioTrack.enabled ? '<i class="fas fa-microphone mr-2"></i>Mute' : '<i class="fas fa-microphone-slash mr-2"></i>Unmute';
+    }
+
+    function toggleCamera() {
+      const videoTrack = localStream?.getVideoTracks()[0];
+      if (!videoTrack) return showToast("This is an audio call. Camera is not active.");
+      videoTrack.enabled = !videoTrack.enabled;
+      const btn = document.getElementById("camera-call-btn");
+      btn.innerHTML = videoTrack.enabled ? '<i class="fas fa-video mr-2"></i>Camera' : '<i class="fas fa-video-slash mr-2"></i>Camera Off';
+    }
+
+    // --- Chat Authentication Logic ---
+    function authenticateChat() {
+      const id = document.getElementById('chat-emp-id').value;
+      const email = document.getElementById('chat-emp-email').value;
+
+      if (!id || !email) {
+        showToast("Please enter Employee ID and Email");
+        return;
+      }
+
+      document.getElementById('chat-auth-gate').classList.add('hidden');
+      document.getElementById('chat-interface').classList.remove('hidden');
+      renderOnlineUsers();
+      showToast("Authentication successful.");
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      if (!realtimeSocket?.connected) return showToast("Realtime chat is still connecting.");
+      realtimeSocket.emit("message:send", { roomId: activeRoomId, text });
+      input.value = '';
+    }
+
+    // --- Call Authentication Logic ---
+    function openCallAuthModal(roomName) {
+      selectedCallRoom = roomName;
+      document.getElementById('call-room-name-display').innerText = `Joining: ${roomName}`;
+      document.getElementById('call-auth-modal').classList.remove('hidden');
+    }
+
+    function connectCall(callType = "video") {
+      closeModals();
+      if (!realtimeSocket?.connected) return showToast("Realtime calls are still connecting.");
+      const target = getPreferredCallTarget();
+      if (!target) return showToast("No manager is online for a call yet.");
+      startDirectCall(target.id, callType);
+    }
+
+    // --- Settings & Online Status ---
+    function toggleOnlineStatus() {
+      isOnline = !isOnline;
+      const btn = document.getElementById('toggle-online-btn');
+      const indicator = document.getElementById('status-indicator');
+      const text = document.getElementById('status-text');
+
+      if (isOnline) {
+        btn.className = "w-12 h-6 bg-blue-600 relative transition-colors duration-300";
+        btn.querySelector('span').className = "absolute right-1 top-1 bg-white w-4 h-4 shadow-sm transition-all duration-300 transform";
+        indicator.className = "w-1.5 h-1.5 bg-blue-500 inline-block";
+        text.innerText = "Online";
+        showToast("You are now visible as Online.");
+      } else {
+        btn.className = "w-12 h-6 bg-slate-300 relative transition-colors duration-300";
+        btn.querySelector('span').className = "absolute left-1 top-1 bg-white w-4 h-4 shadow-sm transition-all duration-300 transform";
+        indicator.className = "w-1.5 h-1.5 bg-slate-400 inline-block";
+        text.innerText = "Offline";
+        showToast("You are now hidden (Offline).");
+      }
+    }
+
+    function toggleSetting(btn) {
+      if (btn.classList.contains('bg-slate-300')) {
+        btn.classList.remove('bg-slate-300');
+        btn.classList.add('bg-blue-600');
+        const span = btn.querySelector('span');
+        span.classList.remove('left-1');
+        span.classList.add('right-1');
+      } else {
+        btn.classList.remove('bg-blue-600');
+        btn.classList.add('bg-slate-300');
+        const span = btn.querySelector('span');
+        span.classList.remove('right-1');
+        span.classList.add('left-1');
+      }
+    }
+
+    // --- Modals & General Utils ---
+    function openEmployeeDirectory() {
+      document.getElementById('employee-directory-modal').classList.remove('hidden');
+    }
+
+    function openProfileModal() {
+      document.getElementById('profile-modal').classList.remove('hidden');
+    }
+
+    function closeModals() {
+      document.querySelectorAll('.modal-bg').forEach(m => m.classList.add('hidden'));
+    }
+
+    function saveNotes() {
+      localStorage.setItem('flowdesk_notes', document.getElementById('personal-notes').value);
+      updateDashboardNotesPreview();
+      showToast('Notes saved successfully');
+    }
+
+    function updateDashboardNotesPreview() {
+      const notes = localStorage.getItem('flowdesk_notes') || '';
+      const previewEl = document.getElementById('dash-quick-notes-preview');
+      if (previewEl) {
+        if (notes.trim() === '') {
+          previewEl.innerHTML = '<span class="text-slate-400 italic">No notes saved yet.</span>';
+        } else {
+          previewEl.textContent = notes;
+        }
+      }
+    }
+
+    function logout() {
+      showToast('Logging out of workspace...');
+      setTimeout(() => { window.location.reload(); }, 1000);
+    }
+
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<i class="fas fa-info-circle text-blue-600"></i><span class="text-slate-700 font-medium">${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    } 
+  </script>
+  <!-- <script src ="index.js"></script> -->
+</body>
+
+</html>

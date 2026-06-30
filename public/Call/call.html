@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowDesk Lite</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-950 font-sans selection:bg-gray-800">
+
+    <!-- 1. Idle / Dashboard View -->
+    <div id="view-dashboard" class="min-h-screen text-white flex flex-col items-center justify-center gap-4">
+        <h1 class="text-4xl font-bold mb-8">FlowDesk Lite</h1>
+        <button onclick="startCall('video', 'outgoing')" class="w-64 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg flex justify-center items-center gap-2 transition-colors">
+            <i data-lucide="video" class="w-5 h-5"></i> Outgoing Video
+        </button>
+        <button onclick="startCall('audio', 'outgoing')" class="w-64 py-3 bg-green-600 hover:bg-green-700 rounded-lg flex justify-center items-center gap-2 transition-colors">
+            <i data-lucide="phone" class="w-5 h-5"></i> Outgoing Audio
+        </button>
+        <button onclick="startCall('video', 'incoming')" class="w-64 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg flex justify-center items-center gap-2 transition-colors">
+            <i data-lucide="video" class="w-5 h-5 text-gray-400"></i> Incoming Video
+        </button>
+    </div>
+
+    <!-- 2. Active / Call Views Container -->
+    <div id="view-call" class="hidden min-h-screen text-white flex-col relative overflow-hidden">
+        
+        <!-- Top Status Bar -->
+        <div id="top-status-bar" class="absolute top-6 left-6 z-10 bg-gray-900/80 backdrop-blur px-4 py-2 rounded-full border border-gray-800">
+            Sarah Jenkins &bull; <span id="status-text">Connecting...</span>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex items-center justify-center">
+            
+            <!-- Incoming View -->
+            <div id="content-incoming" class="hidden text-center z-10">
+                <img src="https://i.pravatar.cc/150?u=sarah" alt="Caller" class="w-32 h-32 rounded-full mx-auto mb-6 border-4 border-gray-800 shadow-xl" />
+                <h2 id="incoming-title" class="text-2xl mb-8">Incoming call...</h2>
+                <div class="flex gap-6 justify-center">
+                    <button onclick="acceptCall()" class="p-5 bg-green-500 hover:bg-green-600 rounded-full transition-transform active:scale-95 shadow-lg shadow-green-500/20">
+                        <i data-lucide="phone" class="w-7 h-7"></i>
+                    </button>
+                    <button onclick="endCall()" class="p-5 bg-red-500 hover:bg-red-600 rounded-full transition-transform active:scale-95 shadow-lg shadow-red-500/20">
+                        <i data-lucide="phone-off" class="w-7 h-7"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Outgoing View -->
+            <div id="content-outgoing" class="hidden text-center z-10">
+                <img src="https://i.pravatar.cc/150?u=sarah" alt="Calling" class="w-32 h-32 rounded-full mx-auto mb-6 animate-pulse border-4 border-gray-800 shadow-xl" />
+                <h2 class="text-2xl mb-8 text-gray-400">Calling...</h2>
+                <button onclick="endCall()" class="p-5 bg-red-500 hover:bg-red-600 rounded-full transition-transform active:scale-95 shadow-lg shadow-red-500/20">
+                    <i data-lucide="phone-off" class="w-7 h-7"></i>
+                </button>
+            </div>
+
+            <!-- Active Video View -->
+            <div id="content-active-video" class="hidden absolute inset-0 bg-gray-900">
+                <img src="https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&w=2000" alt="Remote" class="w-full h-full object-cover opacity-80" />
+                
+                <!-- PIP Self View -->
+                <div class="absolute top-6 right-6 w-32 h-48 bg-gray-800 rounded-xl overflow-hidden border-2 border-gray-700 shadow-xl z-20 transition-all">
+                    <img id="pip-img" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400" alt="Self" class="w-full h-full object-cover" />
+                    <div id="pip-text" class="hidden flex items-center justify-center h-full text-gray-500 text-sm bg-gray-900">
+                        Camera Off
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Audio View -->
+            <div id="content-active-audio" class="hidden text-center z-10">
+                <img src="https://i.pravatar.cc/150?u=sarah" alt="Remote" class="w-40 h-40 rounded-full mx-auto mb-6 border-4 border-gray-800 shadow-2xl" />
+                <h2 class="text-3xl font-medium">Sarah Jenkins</h2>
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div id="bottom-controls" class="hidden absolute bottom-8 left-1/2 -translate-x-1/2 items-center gap-4 bg-gray-900/90 backdrop-blur px-6 py-4 rounded-full border border-gray-800 shadow-2xl z-50">
+            
+            <button id="btn-mic" onclick="toggleMic()" class="p-4 rounded-full bg-gray-800 hover:bg-gray-700 text-white transition-colors">
+                <i data-lucide="mic"></i>
+            </button>
+            
+            <div id="btn-cam-wrapper">
+                <button id="btn-cam" onclick="toggleCam()" class="p-4 rounded-full bg-gray-800 hover:bg-gray-700 text-white transition-colors">
+                    <i data-lucide="video"></i>
+                </button>
+            </div>
+            
+            <div class="w-px h-8 bg-gray-700 mx-2"></div>
+            
+            <button onclick="endCall()" class="p-4 bg-red-600 hover:bg-red-500 rounded-full text-white transition-transform active:scale-95 shadow-lg shadow-red-600/20">
+                <i data-lucide="phone-off"></i>
+            </button>
+
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // State variables
+        let state = {
+            view: 'idle', // 'idle', 'incoming', 'outgoing', 'active'
+            type: 'video', // 'audio', 'video'
+            micOn: true,
+            camOn: true
+        };
+
+        let outgoingTimeout;
+
+        // Element References
+        const els = {
+            viewDashboard: document.getElementById('view-dashboard'),
+            viewCall: document.getElementById('view-call'),
+            topStatusBar: document.getElementById('top-status-bar'),
+            statusText: document.getElementById('status-text'),
+            contentIncoming: document.getElementById('content-incoming'),
+            incomingTitle: document.getElementById('incoming-title'),
+            contentOutgoing: document.getElementById('content-outgoing'),
+            contentActiveVideo: document.getElementById('content-active-video'),
+            contentActiveAudio: document.getElementById('content-active-audio'),
+            bottomControls: document.getElementById('bottom-controls'),
+            pipImg: document.getElementById('pip-img'),
+            pipText: document.getElementById('pip-text'),
+            btnMic: document.getElementById('btn-mic'),
+            btnCamWrapper: document.getElementById('btn-cam-wrapper'),
+            btnCam: document.getElementById('btn-cam')
+        };
+
+        // Initialize icons on load
+        lucide.createIcons();
+
+        // Render Function: Updates DOM based on State
+        function render() {
+            // 1. Reset Visibility
+            els.viewDashboard.classList.add('hidden');
+            els.viewDashboard.classList.remove('flex');
+            els.viewCall.classList.add('hidden');
+            els.viewCall.classList.remove('flex');
+            els.contentIncoming.classList.add('hidden');
+            els.contentOutgoing.classList.add('hidden');
+            els.contentActiveVideo.classList.add('hidden');
+            els.contentActiveAudio.classList.add('hidden');
+            els.bottomControls.classList.add('hidden');
+            els.bottomControls.classList.remove('flex');
+
+            // 2. Apply States
+            if (state.view === 'idle') {
+                els.viewDashboard.classList.remove('hidden');
+                els.viewDashboard.classList.add('flex');
+            } else {
+                els.viewCall.classList.remove('hidden');
+                els.viewCall.classList.add('flex');
+                
+                els.statusText.innerText = state.view === 'active' ? 'Connected' : 'Connecting...';
+
+                if (state.view === 'incoming') {
+                    els.contentIncoming.classList.remove('hidden');
+                    els.incomingTitle.innerText = `Incoming ${state.type} call...`;
+                } 
+                else if (state.view === 'outgoing') {
+                    els.contentOutgoing.classList.remove('hidden');
+                } 
+                else if (state.view === 'active') {
+                    els.bottomControls.classList.remove('hidden');
+                    els.bottomControls.classList.add('flex');
+
+                    // View Type specific
+                    if (state.type === 'video') {
+                        els.contentActiveVideo.classList.remove('hidden');
+                        els.btnCamWrapper.classList.remove('hidden');
+
+                        // Camera PIP State
+                        if (state.camOn) {
+                            els.pipImg.classList.remove('hidden');
+                            els.pipText.classList.add('hidden');
+                            els.pipText.classList.remove('flex');
+                        } else {
+                            els.pipImg.classList.add('hidden');
+                            els.pipText.classList.remove('hidden');
+                            els.pipText.classList.add('flex');
+                        }
+                    } else {
+                        els.contentActiveAudio.classList.remove('hidden');
+                        els.btnCamWrapper.classList.add('hidden');
+                    }
+
+                    // Button Styles
+                    updateButtonStyling(els.btnMic, state.micOn, 'mic', 'mic-off');
+                    updateButtonStyling(els.btnCam, state.camOn, 'video', 'video-off');
+                }
+            }
+
+            // Re-initialize any newly injected icons
+            lucide.createIcons();
+        }
+
+        // Helper for Mic/Cam button styling
+        function updateButtonStyling(btnElement, isOn, iconOn, iconOff) {
+            if (isOn) {
+                btnElement.innerHTML = `<i data-lucide="${iconOn}"></i>`;
+                btnElement.className = 'p-4 rounded-full bg-gray-800 hover:bg-gray-700 text-white transition-colors';
+            } else {
+                btnElement.innerHTML = `<i data-lucide="${iconOff}"></i>`;
+                btnElement.className = 'p-4 rounded-full bg-white text-gray-900 transition-colors shadow-lg shadow-white/10';
+            }
+        }
+
+        // Action Handlers
+        function startCall(type, view) {
+            state.type = type;
+            state.view = view;
+            
+            // Auto-connect outgoing calls after 2 seconds
+            if (view === 'outgoing') {
+                outgoingTimeout = setTimeout(() => {
+                    state.view = 'active';
+                    render();
+                }, 2000);
+            }
+            render();
+        }
+
+        function acceptCall() {
+            state.view = 'active';
+            render();
+        }
+
+        function endCall() {
+            clearTimeout(outgoingTimeout);
+            state.view = 'idle';
+            state.micOn = true;
+            state.camOn = true;
+            render();
+        }
+
+        function toggleMic() {
+            state.micOn = !state.micOn;
+            render();
+        }
+
+        function toggleCam() {
+            state.camOn = !state.camOn;
+            render();
+        }
+
+
+    </script>
+</body>
+</html>

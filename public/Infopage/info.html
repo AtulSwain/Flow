@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>FlowDesk - Smart Workspace Management</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: #f8fbff;
+            overflow-x: hidden;
+            color: #1e293b;
+        }
+
+        .hero-bg {
+            background: linear-gradient(to right, #2563eb, #3b82f6);
+        }
+
+        .card-hover {
+            transition: 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+        }
+
+        .simple-shadow {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-line::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: #2563eb;
+            margin: 12px auto 0;
+        }
+
+        .fade-up {
+            animation: fadeUp 1s ease;
+        }
+
+        @keyframes fadeUp {
+
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="fixed top-0 left-0 w-full bg-white border-b border-slate-200 z-50 shadow-sm">
+
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+
+            <h1 class="text-xl font-bold text-blue-600">
+                FlowDesk
+            </h1>
+
+            <div class="hidden md:flex items-center gap-8 text-slate-700 text-sm font-medium">
+
+                <a href="#features" class="hover:text-blue-600 transition">
+                    Features
+                </a>
+
+                <a href="#workflow" class="hover:text-blue-600 transition">
+                    Workflow
+                </a>
+
+                <a href="#technology" class="hover:text-blue-600 transition">
+                    Technology
+                </a>
+
+                <a href="#communication" class="hover:text-blue-600 transition">
+                    Communication
+                </a>
+
+                <a href="#register" class="hover:text-blue-600 transition">
+                    Register
+                </a>
+
+            </div>
+
+            <div class="flex gap-3">
+
+                <button onclick="window.location.href='/login'"
+                    class="px-4 py-2 border border-blue-600 text-blue-600 text-sm hover:bg-blue-50 transition">
+
+                    Login
+
+                </button>
+
+                <button onclick="openWorkspaceSetup()"
+                    class="px-4 py-2 bg-blue-600 text-white text-sm hover:bg-blue-700 transition">
+
+                    Create Workspace
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="hero-bg min-h-screen flex items-center text-white pt-24">
+
+        <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center fade-up">
+
+            <!-- LEFT -->
+            <div>
+
+                <p class="bg-white/20 inline-block px-4 py-2 text-xs mb-5">
+                    Smart Workspace Management Platform
+                </p>
+
+                <h1 class="text-4xl lg:text-5xl font-bold leading-tight mb-6">
+
+                    Manage Your Company Smarter With FlowDesk
+
+                </h1>
+
+                <p class="text-blue-100 text-base leading-relaxed mb-8 max-w-2xl">
+
+                    FlowDesk helps companies manage employees,
+                    meetings, communication, tasks, productivity,
+                    notifications, audio calls, and real-time collaboration
+                    inside one professional workspace system.
+
+                </p>
+
+                <div class="flex flex-wrap gap-4">
+
+                    <button onclick="openWorkspaceSetup()"
+                        class="bg-white text-blue-700 px-6 py-3 text-sm font-semibold hover:opacity-90 transition">
+
+                        Create Workspace
+
+                    </button>
+
+                    <button onclick="window.location.href='/login'"
+                        class="border border-white px-6 py-3 text-sm font-semibold hover:bg-white hover:text-blue-700 transition">
+
+                        Login Here
+
+                    </button>
+
+                </div>
+
+            </div>
+
+            <!-- RIGHT -->
+            <div class="bg-white text-slate-800 p-8 simple-shadow">
+
+                <h2 class="text-2xl font-bold mb-6 text-center">
+                    Workspace Features
+                </h2>
+
+                <div class="space-y-4">
+
+                    <div class="bg-blue-50 p-5 border-l-4 border-blue-600">
+
+                        <h3 class="text-lg font-semibold mb-2">
+                            Employee Management
+                        </h3>
+
+                        <p class="text-sm text-slate-600">
+                            Manage employees, departments, and workflow easily.
+                        </p>
+
+                    </div>
+
+                    <div class="bg-cyan-50 p-5 border-l-4 border-cyan-500">
+
+                        <h3 class="text-lg font-semibold mb-2">
+                            Real-Time Chat
+                        </h3>
+
+                        <p class="text-sm text-slate-600">
+                            Instant communication using Socket.io.
+                        </p>
+
+                    </div>
+
+                    <div class="bg-indigo-50 p-5 border-l-4 border-indigo-500">
+
+                        <h3 class="text-lg font-semibold mb-2">
+                            Audio & Video Meetings
+                        </h3>
+
+                        <p class="text-sm text-slate-600">
+                            Secure meetings powered by WebRTC.
+                        </p>
+
+                    </div>
+
+                    <div class="bg-slate-100 p-5 border-l-4 border-slate-700">
+
+                        <h3 class="text-lg font-semibold mb-2">
+                            Task Monitoring
+                        </h3>
+
+                        <p class="text-sm text-slate-600">
+                            Monitor employee tasks and productivity.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ABOUT -->
+    <section class="py-20 bg-white">
+
+        <div class="max-w-7xl mx-auto px-6 text-center">
+
+            <h2 class="text-3xl font-bold text-slate-800 section-line">
+                What is FlowDesk?
+            </h2>
+
+            <p class="max-w-4xl mx-auto mt-10 text-base text-slate-600 leading-relaxed">
+
+                FlowDesk is a professional real-time workspace management
+                platform developed to simplify communication,
+                task management, employee monitoring, meetings,
+                collaboration, and company workflow.
+
+            </p>
+
+        </div>
+
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features" class="py-20 bg-slate-50">
+
+        <div class="max-w-7xl mx-auto px-6">
+
+            <div class="text-center mb-16">
+
+                <h2 class="text-3xl font-bold text-slate-800 section-line">
+                    Main Features
+                </h2>
+
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                <div class="bg-white p-6 shadow-sm card-hover">
+
+                    <h3 class="text-lg font-semibold mb-3">
+                        Secure Login
+                    </h3>
+
+                    <p class="text-sm text-slate-600">
+                        Separate login system for managers and employees.
+                    </p>
+
+                </div>
+
+                <div class="bg-white p-6 shadow-sm card-hover">
+
+                    <h3 class="text-lg font-semibold mb-3">
+                        Task Management
+                    </h3>
+
+                    <p class="text-sm text-slate-600">
+                        Assign and monitor employee tasks easily.
+                    </p>
+
+                </div>
+
+                <div class="bg-white p-6 shadow-sm card-hover">
+
+                    <h3 class="text-lg font-semibold mb-3">
+                        Live Chat
+                    </h3>
+
+                    <p class="text-sm text-slate-600">
+                        Real-time messaging powered by Socket.io.
+                    </p>
+
+                </div>
+
+                <div class="bg-white p-6 shadow-sm card-hover">
+
+                    <h3 class="text-lg font-semibold mb-3">
+                        Video Meetings
+                    </h3>
+
+                    <p class="text-sm text-slate-600">
+                        Audio and video communication using WebRTC.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- WORKFLOW -->
+    <section id="workflow" class="py-20 bg-white">
+
+        <div class="max-w-7xl mx-auto px-6">
+
+            <div class="text-center mb-16">
+
+                <h2 class="text-3xl font-bold text-slate-800 section-line">
+                    Workspace Workflow
+                </h2>
+
+                <p class="text-slate-600 mt-6 text-base max-w-3xl mx-auto">
+                    FlowDesk helps managers and employees work together
+                    using one centralized workspace system.
+                </p>
+
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-6">
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+
+                    <div
+                        class="w-14 h-14 bg-blue-600 text-white flex items-center justify-center mx-auto mb-5 text-lg font-bold">
+                        1
+                    </div>
+
+                    <h3 class="text-lg font-semibold mb-3">
+                        Register Company
+                    </h3>
+
+                    <p class="text-sm text-slate-600">
+                        Create company workspace and manager account.
+                    </p>
+
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+
+                    <div
+                        class="w-14 h-14 bg-cyan-500 text-white flex items-center justify-center mx-auto mb-5 text-lg font-bold">
+                        2
+                    </div>
+
+                    <h3 class="text-lg font-semibold mb-3">
+                        Add Employees
+                    </h3>
+
+                    <p class="text-sm text-slate-600">
+                        Create employee IDs and department access.
+                    </p>
+
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+
+                    <div
+                        class="w-14 h-14 bg-indigo-500 text-white flex items-center justify-center mx-auto mb-5 text-lg font-bold">
+                        3
+                    </div>
+
+                    <h3 class="text-lg font-semibold mb-3">
+                        Assign Tasks
+                    </h3>
+
+                    <p class="text-sm text-slate-600">
+                        Managers assign and monitor employee work.
+                    </p>
+
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+
+                    <div
+                        class="w-14 h-14 bg-slate-700 text-white flex items-center justify-center mx-auto mb-5 text-lg font-bold">
+                        4
+                    </div>
+
+                    <h3 class="text-lg font-semibold mb-3">
+                        Collaboration
+                    </h3>
+
+                    <p class="text-sm text-slate-600">
+                        Teams communicate using chat and meetings.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- WHY FLOWDESK -->
+    <section class="py-20 bg-slate-50">
+
+        <div class="max-w-7xl mx-auto px-6">
+
+            <div class="text-center mb-16">
+
+                <h2 class="text-3xl font-bold text-slate-800 section-line">
+                    Why Companies Use FlowDesk
+                </h2>
+
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+
+                <div class="bg-white border border-slate-200 p-7 shadow-sm">
+
+                    <h3 class="text-lg font-semibold mb-3 text-slate-800">
+                        Centralized Workspace
+                    </h3>
+
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Manage communication, tasks, meetings,
+                        and employees inside one platform.
+                    </p>
+
+                </div>
+
+                <div class="bg-white border border-slate-200 p-7 shadow-sm">
+
+                    <h3 class="text-lg font-semibold mb-3 text-slate-800">
+                        Real-Time Productivity
+                    </h3>
+
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Track employee progress and workflow instantly.
+                    </p>
+
+                </div>
+
+                <div class="bg-white border border-slate-200 p-7 shadow-sm">
+
+                    <h3 class="text-lg font-semibold mb-3 text-slate-800">
+                        Secure Communication
+                    </h3>
+
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Real-time chat, notifications,
+                        audio calls, and video meetings.
+                    </p>
+
+                </div>
+
+                <div class="bg-white border border-slate-200 p-7 shadow-sm">
+
+                    <h3 class="text-lg font-semibold mb-3 text-slate-800">
+                        Employee Management
+                    </h3>
+
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Easily manage employees, workflow,
+                        departments, and assignments.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- COMMUNICATION -->
+    <section id="communication" class="py-20 hero-bg text-white">
+
+        <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+
+            <!-- LEFT -->
+            <div>
+
+                <h2 class="text-4xl font-bold leading-tight mb-6">
+
+                    Real-Time Communication System
+
+                </h2>
+
+                <p class="text-blue-100 text-base leading-relaxed mb-8">
+
+                    FlowDesk provides instant communication
+                    between managers and employees using
+                    Socket.io and WebRTC technologies.
+
+                </p>
+
+                <div class="space-y-4">
+
+                    <div class="bg-white/10 p-4 text-sm">
+                        Instant Messaging
+                    </div>
+
+                    <div class="bg-white/10 p-4 text-sm">
+                        Employee Request System
+                    </div>
+
+                    <div class="bg-white/10 p-4 text-sm">
+                        Audio Calling
+                    </div>
+
+                    <div class="bg-white/10 p-4 text-sm">
+                        Video Conferencing
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- RIGHT -->
+            <div class="bg-white text-slate-800 p-8 simple-shadow">
+
+                <h2 class="text-2xl font-bold mb-6 text-center">
+                    Communication Modules
+                </h2>
+
+                <div class="space-y-5">
+
+                    <div class="border-l-4 border-blue-600 pl-5">
+
+                        <h3 class="text-lg font-semibold mb-2">
+                            Chat System
+                        </h3>
+
+                        <p class="text-sm text-slate-600">
+                            Real-time private communication system.
+                        </p>
+
+                    </div>
+
+                    <div class="border-l-4 border-cyan-500 pl-5">
+
+                        <h3 class="text-lg font-semibold mb-2">
+                            Request System
+                        </h3>
+
+                        <p class="text-sm text-slate-600">
+                            Employees can send requests directly to managers.
+                        </p>
+
+                    </div>
+
+                    <div class="border-l-4 border-indigo-500 pl-5">
+
+                        <h3 class="text-lg font-semibold mb-2">
+                            Audio & Video Calls
+                        </h3>
+
+                        <p class="text-sm text-slate-600">
+                            Live meetings using WebRTC technology.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- TECHNOLOGY -->
+    <section id="technology" class="py-20 bg-white">
+
+        <div class="max-w-7xl mx-auto px-6">
+
+            <div class="text-center mb-16">
+
+                <h2 class="text-3xl font-bold text-slate-800 section-line">
+                    Technologies Used
+                </h2>
+
+            </div>
+
+            <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+                    <h3 class="text-lg font-semibold">HTML5</h3>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+                    <h3 class="text-lg font-semibold">CSS3</h3>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+                    <h3 class="text-lg font-semibold">Tailwind CSS</h3>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+                    <h3 class="text-lg font-semibold">JavaScript</h3>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+                    <h3 class="text-lg font-semibold">Socket.io</h3>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+                    <h3 class="text-lg font-semibold">WebRTC</h3>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+                    <h3 class="text-lg font-semibold">Express.js</h3>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 p-6 text-center">
+                    <h3 class="text-lg font-semibold">MySQL</h3>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- REGISTER -->
+    <section id="register" class="py-20 bg-slate-50">
+
+        <div class="max-w-7xl mx-auto px-6">
+
+            <div class="text-center mb-16">
+
+                <h2 class="text-3xl font-bold text-slate-800 section-line">
+                    Register Your Company
+                </h2>
+
+                <p class="text-slate-600 text-base mt-6 max-w-3xl mx-auto leading-relaxed">
+
+                    Create your company workspace and start managing employees,
+                    communication, workflow, and meetings using FlowDesk.
+
+                </p>
+
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-12 items-start">
+
+                <!-- LEFT -->
+                <div class="space-y-5">
+
+                    <div class="bg-white border border-slate-200 p-7 shadow-sm">
+
+                        <div
+                            class="w-14 h-14 bg-blue-600 text-white flex items-center justify-center text-lg font-bold mb-5">
+                            1
+                        </div>
+
+                        <h3 class="text-lg font-semibold text-slate-800 mb-3">
+                            Workspace Setup
+                        </h3>
+
+                        <p class="text-sm text-slate-600">
+                            Create a secure workspace for managers and employees.
+                        </p>
+
+                    </div>
+
+                    <div class="bg-white border border-slate-200 p-7 shadow-sm">
+
+                        <div
+                            class="w-14 h-14 bg-cyan-500 text-white flex items-center justify-center text-lg font-bold mb-5">
+                            2
+                        </div>
+
+                        <h3 class="text-lg font-semibold text-slate-800 mb-3">
+                            Manager Dashboard
+                        </h3>
+
+                        <p class="text-sm text-slate-600">
+                            Manage tasks, workflow, employees, and communication.
+                        </p>
+
+                    </div>
+
+                    <div class="bg-white border border-slate-200 p-7 shadow-sm">
+
+                        <div
+                            class="w-14 h-14 bg-indigo-500 text-white flex items-center justify-center text-lg font-bold mb-5">
+                            3
+                        </div>
+
+                        <h3 class="text-lg font-semibold text-slate-800 mb-3">
+                            Real-Time Collaboration
+                        </h3>
+
+                        <p class="text-sm text-slate-600">
+                            Enable meetings, live chat, and notifications.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <!-- FORM -->
+                <div class="bg-white border border-slate-200 p-8 shadow-md">
+
+                    <h2 class="text-2xl font-bold text-slate-800 mb-8 text-center">
+                        Company Registration Form
+                    </h2>
+
+                    <form class="space-y-5">
+
+                        <div>
+
+                            <label class="block text-sm text-slate-700 font-medium mb-2">
+                                Company Name
+                            </label>
+
+                            <input type="text" id="company_name" placeholder="Enter company name"
+                                class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600">
+
+                        </div>
+
+                        <div>
+
+                            <label class="block text-sm text-slate-700 font-medium mb-2">
+                                Company Email
+                            </label>
+
+                            <input type="email" id="company_email" placeholder="Enter company email"
+                                class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600">
+
+                        </div>
+
+                        <div>
+
+                            <label class="block text-sm text-slate-700 font-medium mb-2">
+                                Company Phone Number
+                            </label>
+
+                            <input type="tel" id="company_phone" placeholder="Enter company phone number"
+                                class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600">
+
+                        </div>
+
+                        <div>
+
+                            <label class="block text-sm text-slate-700 font-medium mb-2">
+                                Company Address
+                            </label>
+
+                            <textarea rows="4" id="company_address" placeholder="Enter company address"
+                                class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600"></textarea>
+
+                        </div>
+
+                        <div>
+
+                            <label class="block text-sm text-slate-700 font-medium mb-2">
+                                Manager Full Name
+                            </label>
+
+                            <input type="text" id="manager_name" placeholder="Enter manager name"
+                                class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600">
+
+                        </div>
+
+                        <div>
+
+                            <label class="block text-sm text-slate-700 font-medium mb-2">
+                                Manager ID
+                            </label>
+
+                            <input type="text" id="manager_id" placeholder="Create manager ID"
+                                class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600">
+
+                        </div>
+
+                        <div>
+
+                            <label class="block text-sm text-slate-700 font-medium mb-2">
+                                Manager Email
+                            </label>
+
+                            <input type="email" id="manager_email" placeholder="Enter manager email"
+                                class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600">
+
+                        </div>
+
+                        <div>
+
+                            <label class="block text-sm text-slate-700 font-medium mb-2">
+                                Password
+                            </label>
+
+                            <input type="password" id="manager_password" placeholder="Create password"
+                                class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600">
+
+                        </div>
+
+                        <div>
+
+                            <label class="block text-sm text-slate-700 font-medium mb-2">
+                                Confirm Password
+                            </label>
+
+                            <input type="password" id="confirm_password" placeholder="Confirm password"
+                                class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600">
+
+                        </div>
+
+                        <div class="flex items-start gap-3">
+
+                            <input type="checkbox" class="mt-1">
+
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                I agree to the Terms & Conditions and Privacy Policy.
+                            </p>
+
+                        </div>
+
+                        <button type="submit"
+                            class="w-full bg-blue-600 text-white py-3 text-sm font-semibold hover:bg-blue-700 transition">
+
+                            Create Workspace
+
+                        </button>
+
+                    </form>
+
+                    <div class="mt-6 text-center">
+
+                        <p class="text-sm text-slate-600">
+                            Already registered your company?
+                        </p>
+
+                        <a href="/login" class="text-blue-600 text-sm font-semibold hover:underline mt-2 inline-block">
+
+                            Login Here
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- WORKSPACE SETUP MODAL -->
+    <div id="workspace-setup-modal"
+        class="fixed inset-0 bg-slate-900/60 z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white border border-slate-200 shadow-xl w-full max-w-lg">
+            <div class="p-6 border-b border-slate-200">
+                <p class="text-xs font-bold text-blue-600 uppercase tracking-wide mb-2">Workspace Setup</p>
+                <h2 class="text-2xl font-bold text-slate-900">Tell us about your workspace</h2>
+                <p class="text-sm text-slate-500 mt-2">Choose your role and work field before opening the login page.
+                </p>
+            </div>
+
+            <div class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm text-slate-700 font-medium mb-2">What is your role?</label>
+                    <select id="setup-role"
+                        class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600 bg-white">
+                        <option value="">Select role</option>
+                        <option>Manager</option>
+                        <option>Employee</option>
+                        <option>Team Lead</option>
+                        <option>Admin</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-700 font-medium mb-2">What field are you working in?</label>
+                    <select id="setup-field"
+                        class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600 bg-white">
+                        <option value="">Select field</option>
+                        <option>Engineering</option>
+                        <option>Design</option>
+                        <option>Marketing</option>
+                        <option>Sales</option>
+                        <option>Human Resources</option>
+                        <option>Finance</option>
+                        <option>Operations</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-700 font-medium mb-2">Workspace name</label>
+                    <input type="text" id="setup-workspace-name" placeholder="e.g. FlowDesk Operations"
+                        class="w-full border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-600">
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:justify-end">
+                <button type="button" onclick="window.location.href='/login'"
+                    class="px-5 py-3 border border-slate-300 text-slate-700 bg-white text-sm font-semibold hover:bg-slate-100 transition">
+                    Direct Login
+                </button>
+                <button type="button" onclick="closeWorkspaceSetup()"
+                    class="px-5 py-3 border border-slate-300 text-slate-700 bg-white text-sm font-semibold hover:bg-slate-100 transition">
+                    Cancel
+                </button>
+                <button type="button" onclick="finishWorkspaceSetup()"
+                    class="px-5 py-3 bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition">
+                    Done & Open Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-white py-12">
+
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-10">
+
+            <div>
+
+                <h2 class="text-2xl font-bold mb-4">
+                    FlowDesk
+                </h2>
+
+                <p class="text-sm text-slate-400 leading-relaxed">
+
+                    Smart real-time workspace management platform
+                    for modern companies and organizations.
+
+                </p>
+
+            </div>
+
+            <div>
+
+                <h3 class="text-lg font-semibold mb-4">
+                    Quick Links
+                </h3>
+
+                <div class="space-y-2 text-sm text-slate-400">
+
+                    <p>Features</p>
+                    <p>Workflow</p>
+                    <p>Technology</p>
+                    <p>Communication</p>
+
+                </div>
+
+            </div>
+
+            <div>
+
+                <h3 class="text-lg font-semibold mb-4">
+                    System Features
+                </h3>
+
+                <div class="space-y-2 text-sm text-slate-400">
+
+                    <p>Task Management</p>
+                    <p>Real-Time Chat</p>
+                    <p>Video Meetings</p>
+                    <p>Employee Monitoring</p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="border-t border-slate-700 mt-10 pt-6 text-center text-xs text-slate-500">
+
+            © 2026 FlowDesk Workspace Management System. All Rights Reserved.
+
+        </div>
+
+    </footer>
+    <script>
+
+        function openWorkspaceSetup() {
+            const modal = document.getElementById("workspace-setup-modal");
+            if (modal) {
+                modal.classList.remove("hidden");
+                modal.classList.add("flex");
+            }
+        }
+
+        function closeWorkspaceSetup() {
+            const modal = document.getElementById("workspace-setup-modal");
+            if (modal) {
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
+            }
+        }
+
+        function finishWorkspaceSetup() {
+            const role = document.getElementById("setup-role").value;
+            const field = document.getElementById("setup-field").value;
+            const workspaceName = document.getElementById("setup-workspace-name").value.trim();
+
+            if (!role || !field || !workspaceName) {
+                alert("Please select your role, field, and workspace name.");
+                return;
+            }
+
+            localStorage.setItem("flowdesk_workspace_setup", JSON.stringify({
+                role,
+                field,
+                workspaceName
+            }));
+
+            window.location.href = "/login";
+        }
+
+        const form = document.querySelector("form");
+
+        form.addEventListener("submit", async (e) => {
+
+            e.preventDefault();
+
+            // INPUT VALUES
+            const company_name =
+                document.querySelector("#company_name").value.trim();
+
+            const company_email =
+                document.querySelector("#company_email").value.trim();
+
+            const company_phone =
+                document.querySelector("#company_phone").value.trim();
+
+            const company_address =
+                document.querySelector("#company_address").value.trim();
+
+            const manager_name =
+                document.querySelector("#manager_name").value.trim();
+
+            const manager_id =
+                document.querySelector("#manager_id").value.trim();
+
+            const manager_email =
+                document.querySelector("#manager_email").value.trim();
+
+            const manager_password =
+                document.querySelector("#manager_password").value.trim();
+
+            const confirm_password =
+                document.querySelector("#confirm_password").value.trim();
+
+            // VALIDATION
+            if (
+                !company_name ||
+                !company_email ||
+                !company_phone ||
+                !company_address ||
+                !manager_name ||
+                !manager_id ||
+                !manager_email ||
+                !manager_password ||
+                !confirm_password
+            ) {
+
+                alert("Please fill all fields.");
+                return;
+
+            }
+
+            // PASSWORD CHECK
+            if (manager_password !== confirm_password) {
+
+                alert("Passwords do not match.");
+                return;
+
+            }
+
+            try {
+
+                // API REQUEST
+                const response = await fetch(
+                    "http://localhost:5000/api/register-company",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            company_name,
+                            company_email,
+                            company_phone,
+                            company_address,
+
+                            manager_name,
+                            manager_id,
+                            manager_email,
+                            manager_password
+
+                        })
+
+                    }
+                );
+
+                const data = await response.json();
+
+                // SUCCESS
+                if (data.success) {
+
+                    alert("Company Registered Successfully");
+
+                    form.reset();
+
+                    openWorkspaceSetup();
+
+                } else {
+
+                    alert(data.message || "Registration Failed");
+
+                }
+            } catch (error) {
+
+                console.log(error);
+
+                alert("Server Error");
+
+            }
+
+        });
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Portal</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons via CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Custom Tailwind Configuration for Theme -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb', // FlowDesk Blue 600
+                        primaryHover: '#1d4ed8', // FlowDesk Blue 700
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Base Google Font */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            /* Strictly white background */
+            color: #1e293b;
+            /* Slate 800 - professional dark text */
+        }
+
+        .hero-bg {
+            background: linear-gradient(to right, #2563eb, #3b82f6);
+        }
+
+        .simple-shadow {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            /* Soft, neutral shadow */
+        }
+
+        /* Custom Scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f8fafc;
+            /* Slate 50 */
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            /* Slate 300 */
+            /* Removed border-radius to keep it square */
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+            /* Slate 400 */
+        }
+
+        /* Modal Animation */
+        #addEmployeeModal {
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        #modalContent {
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            transform: translateY(-20px) scale(0.95);
+            opacity: 0;
+        }
+
+        #addEmployeeModal:not(.hidden) #modalContent {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 antialiased h-screen flex overflow-hidden bg-white">
+
+    <!-- Sidebar -->
+    <aside
+        class="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex transition-all duration-300 z-20">
+        <div
+            class="h-16 flex items-center justify-center border-b border-slate-200 font-bold text-black text-xl tracking-tight">
+            FlowDesk
+        </div>
+
+        <nav class="flex-1 py-6 space-y-1 overflow-y-auto">
+            <a href="#"
+                class="flex items-center pl-6 pr-4 py-3 border-l-4 border-blue-600 bg-blue-50 text-blue-800 font-medium text-sm transition-colors group rounded-none">
+                <i data-lucide="users" class="w-5 h-5 mr-3 text-blue-600"></i>
+                Team Directory
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-200">
+            <a href="#"
+                class="flex items-center px-3 py-2.5 hover:bg-slate-50 hover:text-slate-900 text-slate-600 transition-colors group text-sm font-medium rounded-none">
+                <i data-lucide="settings" class="w-5 h-5 mr-3 text-slate-400 group-hover:text-slate-600"></i>
+                Settings
+            </a>
+            <a href="#"
+                class="flex items-center px-3 py-2.5 hover:bg-slate-50 hover:text-slate-900 text-slate-600 transition-colors group text-sm font-medium mt-1 rounded-none">
+                <i data-lucide="log-out" class="w-5 h-5 mr-3 text-slate-400 group-hover:text-slate-600"></i>
+                Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content wrapper -->
+    <div class="flex-1 flex flex-col min-w-0 bg-white">
+
+        <!-- Header -->
+        <header
+            class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-10">
+            <!-- Mobile Menu Button -->
+            <button class="md:hidden p-2 text-slate-500 hover:text-slate-700 rounded-none">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+
+            <!-- Search Bar -->
+            <div class="flex-1 flex justify-start pl-2 md:pl-0">
+                <div class="relative w-full max-w-md">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <i data-lucide="search" class="w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="Search employees..."
+                        class="block w-full pl-10 pr-3 py-2 border border-slate-200 leading-5 bg-white placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-0 focus:border-blue-600 sm:text-sm transition-colors rounded-none">
+                </div>
+            </div>
+
+            <!-- Header Right Actions -->
+            <div class="flex items-center space-x-4">
+                <button
+                    class="text-slate-500 hover:text-slate-700 relative p-1 hover:bg-slate-50 transition-colors rounded-none">
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-blue-600 border-2 border-white rounded-none"></span>
+                    <i data-lucide="bell" class="w-6 h-6"></i>
+                </button>
+
+                <div class="flex items-center gap-2 cursor-pointer border-l border-slate-200 pl-4">
+                    <div
+                        class="w-8 h-8 bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm border border-slate-200 rounded-none">
+                        AD
+                    </div>
+                    <span class="text-sm font-medium hidden sm:block text-slate-800">Admin User</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 hidden sm:block"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="flex-1 overflow-y-auto bg-white p-4 sm:p-6 lg:p-8">
+
+            <!-- Page Header -->
+            <div class="sm:flex sm:items-center sm:justify-between mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Team Directory</h1>
+                    <p class="mt-1 text-sm text-slate-500">Manage your team members and their account permissions here.
+                    </p>
+                </div>
+                <div class="mt-4 sm:mt-0">
+                    <button id="openModalBtn"
+                        class="inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition-colors rounded-none">
+                        <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+                        Add Employee
+                    </button>
+                </div>
+            </div>
+
+            <!-- Data Table Card -->
+            <div class="bg-white simple-shadow border border-slate-200 rounded-none overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                    Employee</th>
+                                <th scope="col"
+                                    class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                    Role & Dept</th>
+                                <th scope="col"
+                                    class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                    Status</th>
+                                <th scope="col"
+                                    class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                    Join Date</th>
+                                <th scope="col"
+                                    class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeTableBody" class="bg-white divide-y divide-slate-100">
+                            <!-- Rows will be populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden text-center py-12">
+                    <div
+                        class="inline-flex items-center justify-center w-12 h-12 bg-slate-50 text-slate-400 mb-4 rounded-none border border-slate-200">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-sm font-medium text-slate-900">No employees found</h3>
+                    <p class="mt-1 text-sm text-slate-500">Try adjusting your search criteria.</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Add Employee Modal (Hidden initially) -->
+    <div id="addEmployeeModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title"
+        role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" id="modalBackdrop"></div>
+
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:p-0">
+            <!-- Modal Panel -->
+            <div id="modalContent"
+                class="relative inline-block align-bottom bg-white text-left overflow-hidden simple-shadow transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full rounded-none border border-slate-200">
+
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-slate-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg leading-6 font-semibold text-slate-900" id="modal-title">Register New
+                            Employee</h3>
+                        <button type="button" id="closeModalBtn"
+                            class="bg-white text-slate-400 hover:text-slate-600 focus:outline-none transition-colors rounded-none">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <form id="addEmployeeForm" class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-slate-700">Full Name</label>
+                            <input type="text" name="name" id="name" required
+                                class="mt-1 block w-full border border-slate-300 shadow-sm py-2 px-3 text-slate-900 focus:outline-none focus:border-blue-600 sm:text-sm transition-colors rounded-none bg-white">
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-slate-700">Email Address</label>
+                            <input type="email" name="email" id="email" required
+                                class="mt-1 block w-full border border-slate-300 shadow-sm py-2 px-3 text-slate-900 focus:outline-none focus:border-blue-600 sm:text-sm transition-colors rounded-none bg-white">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="role" class="block text-sm font-medium text-slate-700">Job Role</label>
+                                <input type="text" name="role" id="role" required
+                                    class="mt-1 block w-full border border-slate-300 shadow-sm py-2 px-3 text-slate-900 focus:outline-none focus:border-blue-600 sm:text-sm transition-colors rounded-none bg-white">
+                            </div>
+
+                            <div>
+                                <label for="department"
+                                    class="block text-sm font-medium text-slate-700">Department</label>
+                                <select id="department" name="department"
+                                    class="mt-1 block w-full bg-white border border-slate-300 shadow-sm py-2 px-3 text-slate-900 focus:outline-none focus:border-blue-600 sm:text-sm transition-colors rounded-none">
+                                    <option value="Engineering">Engineering</option>
+                                    <option value="Product">Product</option>
+                                    <option value="Human Resources">Human Resources</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Sales">Sales</option>
+                                    <option value="Finance">Finance</option>
+                                    <option value="Design">Design</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="status" class="block text-sm font-medium text-slate-700">Status</label>
+                                <select id="status" name="status"
+                                    class="mt-1 block w-full bg-white border border-slate-300 shadow-sm py-2 px-3 text-slate-900 focus:outline-none focus:border-blue-600 sm:text-sm transition-colors rounded-none">
+                                    <option value="Active">Active</option>
+                                    <option value="On Leave">On Leave</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="joinDate" class="block text-sm font-medium text-slate-700">Join Date</label>
+                                <input type="date" name="joinDate" id="joinDate" required
+                                    class="mt-1 block w-full border border-slate-300 shadow-sm py-2 px-3 text-slate-900 focus:outline-none focus:border-blue-600 sm:text-sm transition-colors rounded-none bg-white">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200">
+                    <button type="submit" form="addEmployeeForm"
+                        class="w-full inline-flex justify-center border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm transition-colors rounded-none">
+                        Save Employee
+                    </button>
+                    <button type="button" id="cancelModalBtn"
+                        class="mt-3 w-full inline-flex justify-center border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors rounded-none">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main JavaScript Logic -->
+    <script>
+        // --- DATA & STATE ---
+        let employees = [
+            { id: 1, name: "Janam Jain", email: "janam.j@company.com", role: "Senior Frontend Engineer", department: "Engineering", status: "Active", joinDate: "2023-01-15" },
+            { id: 2, name: "Hari Omm", email: "hari@company.com", role: "Product Manager", department: "Product", status: "Active", joinDate: "2023-03-10" },
+            { id: 3, name: "Suraj Kumar", email: "suraj@company.com", role: "HR Specialist", department: "Human Resources", status: "On Leave", joinDate: "2022-11-05" },
+            { id: 4, name: "Ajay Gupta", email: "ajay@company.com", role: "Backend Developer", department: "Engineering", status: "Active", joinDate: "2024-02-01" },
+            { id: 5, name: "Mukash Sharma", email: "mukash@company.com", role: "Marketing Director", department: "Marketing", status: "Inactive", joinDate: "2021-08-22" },
+        ];
+
+        // --- DOM ELEMENTS ---
+        const tableBody = document.getElementById('employeeTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+
+        // Modal Elements
+        const modal = document.getElementById('addEmployeeModal');
+        const openModalBtn = document.getElementById('openModalBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+        const modalBackdrop = document.getElementById('modalBackdrop');
+        const form = document.getElementById('addEmployeeForm');
+
+        // Set default date in form to today
+        document.getElementById('joinDate').valueAsDate = new Date();
+
+        // --- UTILITY FUNCTIONS ---
+
+        // Get square badge color (Blue for active, neutral/gray for inactive)
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'Active': return 'bg-blue-100 text-blue-800 border-blue-200';
+                case 'On Leave': return 'bg-slate-100 text-slate-700 border-slate-200';
+                case 'Inactive': return 'bg-white text-slate-500 border-slate-200';
+                default: return 'bg-white text-slate-600 border-slate-200';
+            }
+        }
+
+        // Generate initials for square avatar
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        }
+
+        // --- RENDER LOGIC ---
+        function renderTable(dataToRender) {
+            tableBody.innerHTML = '';
+
+            if (dataToRender.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+
+                dataToRender.forEach(emp => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50 transition-colors group';
+
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10 bg-blue-50 flex items-center justify-center border border-blue-100 text-blue-700 font-bold text-sm rounded-none">
+                                    ${getInitials(emp.name)}
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-semibold text-slate-900">${emp.name}</div>
+                                    <div class="text-sm text-slate-500 flex items-center mt-0.5">
+                                        <i data-lucide="mail" class="w-3 h-3 mr-1"></i>
+                                        ${emp.email}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-slate-900 font-medium">${emp.role}</div>
+                            <div class="text-sm text-slate-500 flex items-center mt-0.5">
+                                <i data-lucide="briefcase" class="w-3 h-3 mr-1"></i>
+                                ${emp.department}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-medium border rounded-none ${getStatusBadgeClass(emp.status)}">
+                                ${emp.status === 'Active' ? '<i data-lucide="check" class="w-3 h-3 mr-1"></i>' : ''}
+                                ${emp.status === 'On Leave' ? '<i data-lucide="clock" class="w-3 h-3 mr-1"></i>' : ''}
+                                ${emp.status === 'Inactive' ? '<i data-lucide="minus" class="w-3 h-3 mr-1"></i>' : ''}
+                                ${emp.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-medium">
+                            ${new Date(emp.joinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button class="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-none hover:bg-slate-100">
+                                <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            // Re-initialize icons for newly added DOM elements
+            lucide.createIcons();
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // Search
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = employees.filter(emp =>
+                emp.name.toLowerCase().includes(query) ||
+                emp.email.toLowerCase().includes(query) ||
+                emp.role.toLowerCase().includes(query) ||
+                emp.department.toLowerCase().includes(query)
+            );
+            renderTable(filtered);
+        });
+
+        // Modal Controls
+        function toggleModal(show) {
+            if (show) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('modalContent').style.transform = 'translateY(0) scale(1)';
+                    document.getElementById('modalContent').style.opacity = '1';
+                }, 10);
+            } else {
+                document.getElementById('modalContent').style.transform = 'translateY(-20px) scale(0.95)';
+                document.getElementById('modalContent').style.opacity = '0';
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    form.reset();
+                    document.getElementById('joinDate').valueAsDate = new Date();
+                }, 200);
+            }
+        }
+
+        openModalBtn.addEventListener('click', () => toggleModal(true));
+        closeModalBtn.addEventListener('click', () => toggleModal(false));
+        cancelModalBtn.addEventListener('click', () => toggleModal(false));
+        modalBackdrop.addEventListener('click', () => toggleModal(false));
+
+        // Form Submit
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const newEmployee = {
+                id: employees.length + 1,
+                name: form.name.value,
+                email: form.email.value,
+                role: form.role.value,
+                department: form.department.value,
+                status: form.status.value,
+                joinDate: form.joinDate.value
+            };
+
+            employees.unshift(newEmployee);
+            renderTable(employees);
+            searchInput.value = '';
+            toggleModal(false);
+        });
+
+        // --- INITIALIZATION ---
+        lucide.createIcons();
+        renderTable(employees);
+
+    </script>
+</body>
+
+</html>

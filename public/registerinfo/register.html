@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FlowDesk Register</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:'Poppins',sans-serif;
+    }
+
+    body{
+      background:#f8fbff;
+      color:#1e293b;
+    }
+
+    .hero-bg{
+      background:linear-gradient(to right,#2563eb,#3b82f6);
+    }
+
+    .form-animation{
+      animation:fadeUp 0.8s ease;
+    }
+
+    @keyframes fadeUp{
+      from{
+        opacity:0;
+        transform:translateY(20px);
+      }
+
+      to{
+        opacity:1;
+        transform:translateY(0);
+      }
+    }
+
+    input,
+    select{
+      outline:none;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="w-full bg-white border-b border-slate-200 shadow-sm">
+
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+
+      <h1 class="text-2xl font-semibold">
+        FlowDesk
+      </h1>
+
+      <!-- FIXED LOGIN BUTTON -->
+      <a
+        href="/login"
+        class="px-6 py-2 bg-blue-600 text-white rounded-none hover:bg-blue-700 transition inline-block">
+
+        Login
+
+      </a>
+
+    </div>
+
+  </nav>
+
+  <!-- Register Section -->
+  <section class="hero-bg min-h-screen flex items-center justify-center px-6 py-16">
+
+    <div class="bg-white w-full max-w-2xl p-10 shadow-sm rounded-none form-animation">
+
+      <h2 class="text-4xl font-semibold text-center mb-3">
+        Company Registration
+      </h2>
+
+      <p class="text-slate-500 text-center mb-10">
+        Register your company to access FlowDesk workspace system.
+      </p>
+
+      <!-- FIXED FORM -->
+      <form
+        class="space-y-6"
+        onsubmit="registerCompany(event)">
+
+        <div>
+
+          <label class="block mb-2 font-medium text-slate-700">
+            Company Name
+          </label>
+
+          <input
+            type="text"
+            id="companyName"
+            placeholder="Enter company name"
+            class="w-full border border-slate-300 px-4 py-3 rounded-none"
+            required>
+
+        </div>
+
+        <div>
+
+          <label class="block mb-2 font-medium text-slate-700">
+            Company Field
+          </label>
+
+          <select
+            id="companyField"
+            class="w-full border border-slate-300 px-4 py-3 rounded-none bg-white"
+            required>
+
+            <option value="">Select company field</option>
+
+            <option>Software Development</option>
+            <option>Marketing</option>
+            <option>Finance</option>
+            <option>Healthcare</option>
+            <option>Education</option>
+            <option>Business</option>
+
+          </select>
+
+        </div>
+
+        <div>
+
+          <label class="block mb-2 font-medium text-slate-700">
+            Email Address
+          </label>
+
+          <input
+            type="email"
+            id="email"
+            placeholder="Enter company email"
+            class="w-full border border-slate-300 px-4 py-3 rounded-none"
+            required>
+
+        </div>
+
+        <div>
+
+          <label class="block mb-2 font-medium text-slate-700">
+            Password
+          </label>
+
+          <input
+            type="password"
+            id="password"
+            placeholder="Create password"
+            class="w-full border border-slate-300 px-4 py-3 rounded-none"
+            required>
+
+        </div>
+
+        <div>
+
+          <label class="block mb-2 font-medium text-slate-700">
+            Confirm Password
+          </label>
+
+          <input
+            type="password"
+            id="confirmPassword"
+            placeholder="Confirm password"
+            class="w-full border border-slate-300 px-4 py-3 rounded-none"
+            required>
+
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-blue-600 text-white py-3 rounded-none hover:bg-blue-700 transition font-medium">
+
+          Register Company
+
+        </button>
+
+      </form>
+
+      <!-- FIXED LOGIN LINK -->
+      <p class="text-center text-slate-500 mt-6">
+
+        Already have an account?
+
+        <a
+          href="/login"
+          class="text-blue-600 font-medium">
+
+          Login
+
+        </a>
+
+      </p>
+
+    </div>
+
+  </section>
+
+  <!-- SCRIPT -->
+  <script>
+
+    function registerCompany(event){
+
+      event.preventDefault();
+
+      const companyName =
+      document.getElementById("companyName").value;
+
+      const companyField =
+      document.getElementById("companyField").value;
+
+      const email =
+      document.getElementById("email").value;
+
+      const password =
+      document.getElementById("password").value;
+
+      const confirmPassword =
+      document.getElementById("confirmPassword").value;
+
+      if(password !== confirmPassword){
+
+        alert("Passwords do not match");
+        return;
+
+      }
+
+      // SAVE TEMP DATA
+      localStorage.setItem("companyName", companyName);
+      localStorage.setItem("companyField", companyField);
+      localStorage.setItem("companyEmail", email);
+
+      alert("Company Registered Successfully");
+
+      // REDIRECT TO LOGIN
+      window.location.href = "/login";
+
+    }
+
+  </script>
+
+</body>
+</html>                 
