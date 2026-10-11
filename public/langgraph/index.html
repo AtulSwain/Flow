@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LangGraph Atlas</title>
+  <meta name="description" content="A visual, in-depth guide to LangGraph: how the runtime works, core concepts, agent architectures, design patterns, model providers, research foundations and production practice." />
+  <meta name="theme-color" content="#05060f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='8' cy='8' r='5' fill='%2322d3ee'/%3E%3Ccircle cx='24' cy='16' r='5' fill='%238b5cf6'/%3E%3Ccircle cx='8' cy='24' r='5' fill='%23f472b6'/%3E%3Cpath d='M8 8L24 16L8 24' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="scroll-progress" aria-hidden="true"><span></span></div>
+
+  <!-- ================= NAV ================= -->
+  <header class="nav" id="nav">
+    <a href="#top" class="brand" aria-label="LangGraph Atlas home">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>LangGraph<span class="muted">Atlas</span></span>
+    </a>
+    <nav class="nav-links" id="navLinks" aria-label="Sections">
+      <a href="#what">Overview</a>
+      <a href="#concepts">Concepts</a>
+      <a href="#runtime">Runtime</a>
+      <a href="#architectures">Architectures</a>
+      <a href="#patterns">Patterns</a>
+      <a href="#models">Models</a>
+      <a href="#research">Research</a>
+      <a href="#production">Production</a>
+    </nav>
+    <a class="btn btn-sm btn-glow nav-cta" href="#build">Build one</a>
+    <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks"><span></span><span></span></button>
+  </header>
+
+  <main id="top">
+    <!-- ================= HERO ================= -->
+    <section class="hero">
+      <canvas id="heroCanvas" aria-hidden="true"></canvas>
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="hero-content">
+        <p class="eyebrow reveal"><span class="pulse"></span> The low-level orchestration framework for agents</p>
+        <h1 class="reveal">Agents are <span class="grad">graphs</span>.<br />LangGraph makes them <span class="grad-2">durable</span>.</h1>
+        <p class="lede reveal">LangGraph models an AI application as a stateful graph: <b>nodes</b> do work, <b>edges</b> decide what runs next, and a shared <b>state</b> is checkpointed after every step — so agents can loop, branch, pause for humans, recover from failure and travel back in time.</p>
+        <div class="hero-actions reveal">
+          <a class="btn btn-glow" href="#runtime">See it run ▸</a>
+          <a class="btn btn-ghost" href="#architectures">Explore architectures</a>
+        </div>
+        <dl class="hero-stats reveal">
+          <div><dt data-count="12">0</dt><dd>architectures mapped</dd></div>
+          <div><dt data-count="6">0</dt><dd>workflow patterns</dd></div>
+          <div><dt data-count="10">0</dt><dd>model providers</dd></div>
+          <div><dt data-count="14">0</dt><dd>research papers</dd></div>
+        </dl>
+      </div>
+      <a href="#what" class="scroll-hint" aria-label="Scroll to overview"><span></span></a>
+    </section>
+
+    <!-- ================= WHAT ================= -->
+    <section class="section" id="what">
+      <div class="section-head reveal">
+        <span class="kicker">01 — Overview</span>
+        <h2>What is LangGraph?</h2>
+        <p>LangGraph is an open-source library (Python &amp; JavaScript, MIT-licensed) from the LangChain team for building long-running, stateful agents and workflows. It is deliberately <em>low-level</em>: it doesn't hide your prompts or architecture behind magic — it gives you a runtime with the primitives agents need in production.</p>
+      </div>
+
+      <div class="grid-4">
+        <article class="feature tilt reveal">
+          <div class="feature-icon i1" aria-hidden="true">↻</div>
+          <h3>Cycles, not just chains</h3>
+          <p>Classic pipelines are DAGs. Agents loop: think → act → observe → think again. LangGraph supports cycles natively, with a recursion limit as a safety net.</p>
+        </article>
+        <article class="feature tilt reveal">
+          <div class="feature-icon i2" aria-hidden="true">◈</div>
+          <h3>Durable execution</h3>
+          <p>A checkpointer saves state after every super-step. Crash mid-run? Resume from the last checkpoint. Need a week-long approval? Pause and pick up later.</p>
+        </article>
+        <article class="feature tilt reveal">
+          <div class="feature-icon i3" aria-hidden="true">✋</div>
+          <h3>Human-in-the-loop</h3>
+          <p><code>interrupt()</code> pauses a graph anywhere, surfaces data to a person, and resumes with their answer via <code>Command(resume=…)</code>.</p>
+        </article>
+        <article class="feature tilt reveal">
+          <div class="feature-icon i4" aria-hidden="true">≋</div>
+          <h3>First-class streaming</h3>
+          <p>Stream full state, per-node updates, LLM tokens, or custom events — so users see progress while a multi-step agent works.</p>
+        </article>
+      </div>
+
+      <div class="split reveal">
+        <div class="glass pad">
+          <h3 class="h-sm">The mental model</h3>
+          <ol class="steps">
+            <li><b>Define state</b> — a typed schema (TypedDict, Pydantic, or Zod/Annotation in JS). Each key may have a <em>reducer</em> that says how updates merge.</li>
+            <li><b>Add nodes</b> — plain functions <code>state → partial update</code>. Call an LLM, a tool, an API, or anything else.</li>
+            <li><b>Wire edges</b> — fixed edges, conditional edges (routers), or dynamic <code>Command</code> / <code>Send</code> from inside a node.</li>
+            <li><b>Compile</b> — attach a checkpointer, store and interrupt points. You get a <em>Runnable</em> with <code>invoke</code>, <code>stream</code>, <code>batch</code>.</li>
+            <li><b>Run on a thread</b> — every invocation with the same <code>thread_id</code> continues the same persisted conversation.</li>
+          </ol>
+        </div>
+        <div class="glass pad mini-code">
+          <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span>graph.py</span></div>
+<pre><code><span class="k">from</span> langgraph.graph <span class="k">import</span> StateGraph, START, END
+
+builder = StateGraph(State)
+builder.add_node(<span class="s">"plan"</span>, plan)
+builder.add_node(<span class="s">"act"</span>, act)
+builder.add_edge(START, <span class="s">"plan"</span>)
+builder.add_conditional_edges(<span class="s">"plan"</span>, route,
+    {<span class="s">"act"</span>: <span class="s">"act"</span>, <span class="s">"done"</span>: END})
+builder.add_edge(<span class="s">"act"</span>, <span class="s">"plan"</span>)   <span class="c"># a cycle!</span>
+
+graph = builder.compile(checkpointer=saver)</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CONCEPTS ================= -->
+    <section class="section" id="concepts">
+      <div class="section-head reveal">
+        <span class="kicker">02 — Core concepts</span>
+        <h2>The building blocks</h2>
+        <p>Twelve primitives cover nearly everything. Tap a card to flip it and see the code.</p>
+      </div>
+      <div class="concept-grid" id="conceptGrid"></div>
+    </section>
+
+    <!-- ================= RUNTIME ================= -->
+    <section class="section" id="runtime">
+      <div class="section-head reveal">
+        <span class="kicker">03 — How it works</span>
+        <h2>Inside the runtime: Pregel super-steps</h2>
+        <p>Under the hood, a compiled graph is a <b>Pregel</b> program — an execution model inspired by Google's Pregel and the Bulk Synchronous Parallel (BSP) model. State lives in <em>channels</em>; nodes <em>subscribe</em> to channels and <em>write</em> to them. Execution proceeds in discrete <b>super-steps</b>.</p>
+      </div>
+
+      <div class="bsp reveal">
+        <div class="bsp-step"><span>1</span><h4>Plan</h4><p>Pick every node whose subscribed channels changed in the last step. On step 0 that's whatever follows <code>START</code>.</p></div>
+        <div class="bsp-arrow" aria-hidden="true"></div>
+        <div class="bsp-step"><span>2</span><h4>Execute</h4><p>Run the selected nodes <em>in parallel</em>. Their writes are buffered — invisible to each other until the step ends.</p></div>
+        <div class="bsp-arrow" aria-hidden="true"></div>
+        <div class="bsp-step"><span>3</span><h4>Update</h4><p>Apply buffered writes to channels via reducers, then save a <b>checkpoint</b>. Repeat until no node is triggered or <code>END</code> is reached.</p></div>
+      </div>
+
+      <div class="runner glass reveal" id="runner">
+        <div class="runner-stage">
+          <svg id="runnerSvg" viewBox="0 0 520 420" role="img" aria-label="Animated ReAct agent graph: START, agent, tools, END"></svg>
+          <div class="runner-controls">
+            <button class="btn btn-sm btn-glow" id="runPlay">▶ Run</button>
+            <button class="btn btn-sm btn-ghost" id="runStep">Step</button>
+            <button class="btn btn-sm btn-ghost" id="runReset">Reset</button>
+            <span class="runner-meta">super-step <b id="runStepNo">–</b></span>
+          </div>
+        </div>
+        <div class="runner-panel">
+          <div class="panel-tabs" role="tablist">
+            <button role="tab" class="active" data-panel="state" aria-selected="true">State</button>
+            <button role="tab" data-panel="log" aria-selected="false">Event stream</button>
+            <button role="tab" data-panel="ckpt" aria-selected="false">Checkpoints</button>
+          </div>
+          <div class="panel" id="panel-state"><pre id="stateView">{ "messages": [] }</pre></div>
+          <div class="panel" id="panel-log" hidden><ul id="logView" class="log"></ul></div>
+          <div class="panel" id="panel-ckpt" hidden><ul id="ckptView" class="ckpts"></ul></div>
+          <p class="runner-caption" id="runCaption">Press <b>Run</b> to watch a ReAct agent answer “What's the weather in Paris?”.</p>
+        </div>
+      </div>
+
+      <div class="grid-3 reveal">
+        <div class="glass pad">
+          <h3 class="h-sm">Channels &amp; reducers</h3>
+          <p>Each state key is a channel. Without a reducer, a write <em>overwrites</em> (LastValue). With <code>Annotated[list, add]</code> or <code>add_messages</code>, writes are <em>merged</em> — that's how parallel branches safely append to the same list.</p>
+        </div>
+        <div class="glass pad">
+          <h3 class="h-sm">Threads &amp; checkpoints</h3>
+          <p>A <em>thread</em> is a sequence of checkpoints. <code>get_state()</code> reads the latest; <code>get_state_history()</code> lists them all. Invoke with an older <code>checkpoint_id</code> to <b>replay</b> or <b>fork</b> — that's time travel.</p>
+        </div>
+        <div class="glass pad">
+          <h3 class="h-sm">Durability modes</h3>
+          <p>Choose how eagerly checkpoints are persisted: <code>"exit"</code> (only at the end — fastest), <code>"async"</code> (write while the next step runs), or <code>"sync"</code> (write before continuing — safest).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ARCHITECTURES ================= -->
+    <section class="section" id="architectures">
+      <div class="section-head reveal">
+        <span class="kicker">04 — Architectures</span>
+        <h2>Agent architectures, mapped</h2>
+        <p>The same five primitives compose into very different systems. Filter by family; hover a card to tilt it in 3D; open it for the deep-dive.</p>
+      </div>
+      <div class="chips reveal" id="archFilters" role="toolbar" aria-label="Filter architectures">
+        <button class="chip active" data-filter="all">All</button>
+        <button class="chip" data-filter="single">Single agent</button>
+        <button class="chip" data-filter="multi">Multi-agent</button>
+        <button class="chip" data-filter="planning">Planning &amp; reasoning</button>
+        <button class="chip" data-filter="rag">Retrieval</button>
+      </div>
+      <div class="arch-grid" id="archGrid"></div>
+    </section>
+
+    <!-- ================= PATTERNS ================= -->
+    <section class="section" id="patterns">
+      <div class="section-head reveal">
+        <span class="kicker">05 — Patterns</span>
+        <h2>Workflows vs. agents</h2>
+        <p><b>Workflows</b> follow predetermined code paths; <b>agents</b> let the model choose its own path and tools. Most real systems mix the two. These six patterns are the vocabulary — and each maps onto a LangGraph primitive.</p>
+      </div>
+      <div class="pattern-shell reveal">
+        <div class="pattern-list" id="patternList" role="tablist" aria-label="Patterns"></div>
+        <div class="pattern-view glass" id="patternView" role="tabpanel"></div>
+      </div>
+    </section>
+
+    <!-- ================= MODELS ================= -->
+    <section class="section" id="models">
+      <div class="section-head reveal">
+        <span class="kicker">06 — Models</span>
+        <h2>Bring any model</h2>
+        <p>LangGraph is model-agnostic — a node is just a function, so it can call any LLM or none at all. Through LangChain integrations, <code>init_chat_model("provider:model")</code> gives every provider the same interface for messages, tool calling, structured output and streaming.</p>
+      </div>
+      <div class="model-grid" id="modelGrid"></div>
+
+      <div class="split reveal">
+        <div class="glass pad">
+          <h3 class="h-sm">What a model must do well inside a graph</h3>
+          <div class="cap-list" id="capList"></div>
+        </div>
+        <div class="glass pad">
+          <h3 class="h-sm">Mix models per node</h3>
+          <p>Because each node owns its model call, you can route cost and capability precisely:</p>
+          <ul class="ticks">
+            <li><b>Planner / supervisor</b> — your strongest reasoning model; it's called rarely but decides everything.</li>
+            <li><b>Workers / tool callers</b> — a fast mid-tier model with reliable tool calling.</li>
+            <li><b>Classifiers / routers / graders</b> — a small, cheap model with structured output.</li>
+            <li><b>Private data</b> — a local open-weight model (e.g. via Ollama) for nodes that must not leave your network.</li>
+            <li><b>Fallbacks</b> — <code>model.with_fallbacks([...])</code> or a retry policy on the node to survive provider outages.</li>
+          </ul>
+<pre class="inline-code"><code>planner = init_chat_model(<span class="s">"anthropic:claude-opus-5-5"</span>)
+worker  = init_chat_model(<span class="s">"anthropic:claude-sonnet-5-5"</span>)
+grader  = init_chat_model(<span class="s">"anthropic:claude-haiku-5-5"</span>)
+local   = init_chat_model(<span class="s">"ollama:llama3.1"</span>)</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ECOSYSTEM ================= -->
+    <section class="section" id="ecosystem">
+      <div class="section-head reveal">
+        <span class="kicker">07 — Ecosystem</span>
+        <h2>Where LangGraph sits</h2>
+        <p>LangGraph is the orchestration layer. Integrations come from below; observability and deployment come from above. Each layer is optional — LangGraph runs without LangChain or LangSmith.</p>
+      </div>
+      <div class="stack-wrap reveal">
+        <div class="stack-stage"><div class="stack" id="stack" aria-hidden="true">
+          <div class="layer l4"><b>LangSmith</b><span>Tracing · Evals · Deployment · Studio</span></div>
+          <div class="layer l3"><b>Prebuilt agents</b><span>create_agent · supervisor · swarm</span></div>
+          <div class="layer l2"><b>LangGraph runtime</b><span>StateGraph · Pregel · checkpoints · store</span></div>
+          <div class="layer l1"><b>Integrations</b><span>Chat models · tools · retrievers · vector stores</span></div>
+        </div></div>
+        <div class="stack-legend">
+          <div class="legend-item"><i class="d4"></i><div><b>LangSmith</b> — trace every node, LLM call and tool call; run evaluations; deploy graphs as scalable APIs with task queues, cron and persistence (formerly “LangGraph Platform”). <b>LangGraph Studio</b> is its visual IDE for graphs.</div></div>
+          <div class="legend-item"><i class="d3"></i><div><b>Prebuilt agents</b> — high-level constructors built <em>on</em> LangGraph: LangChain's <code>create_agent</code> (successor to <code>create_react_agent</code>), plus <code>langgraph-supervisor</code> and <code>langgraph-swarm</code> for multi-agent setups.</div></div>
+          <div class="legend-item"><i class="d2"></i><div><b>LangGraph</b> — the graph APIs (<code>StateGraph</code>, Functional API with <code>@entrypoint</code>/<code>@task</code>), Pregel runtime, checkpointers (memory, SQLite, Postgres…) and the long-term memory <code>Store</code>.</div></div>
+          <div class="legend-item"><i class="d1"></i><div><b>Integrations</b> — provider packages (<code>langchain-anthropic</code>, <code>langchain-openai</code>…), tools, MCP adapters and retrievers. Use them — or call SDKs directly.</div></div>
+        </div>
+      </div>
+
+      <h3 class="h-md reveal">A short history</h3>
+      <ol class="timeline reveal" id="timeline"></ol>
+    </section>
+
+    <!-- ================= BUILD ================= -->
+    <section class="section" id="build">
+      <div class="section-head reveal">
+        <span class="kicker">08 — Build</span>
+        <h2>Your first agent, end to end</h2>
+        <p>A tool-calling ReAct agent with memory — the exact graph animated in the runtime section. Install with <code>pip install -U langgraph "langchain[anthropic]"</code> or <code>npm i @langchain/langgraph @langchain/anthropic</code>.</p>
+      </div>
+      <div class="code-card glass reveal">
+        <div class="code-tabs" role="tablist">
+          <button class="active" data-code="py" role="tab" aria-selected="true">Python</button>
+          <button data-code="js" role="tab" aria-selected="false">TypeScript</button>
+          <button data-code="hitl" role="tab" aria-selected="false">Human-in-the-loop</button>
+          <button data-code="send" role="tab" aria-selected="false">Map-reduce</button>
+          <button data-code="cmd" role="tab" aria-selected="false">Handoffs</button>
+          <button data-code="func" role="tab" aria-selected="false">Functional API</button>
+          <button class="copy" id="copyBtn" aria-label="Copy code">Copy</button>
+        </div>
+        <pre class="code-body"><code id="codeBody"></code></pre>
+      </div>
+    </section>
+
+    <!-- ================= COMPARE ================= -->
+    <section class="section" id="compare">
+      <div class="section-head reveal">
+        <span class="kicker">09 — Landscape</span>
+        <h2>LangGraph and its neighbours</h2>
+        <p>Frameworks sit on a spectrum from <em>explicit control</em> to <em>high-level convenience</em>. A rough guide — every one of these is evolving quickly.</p>
+      </div>
+      <div class="table-wrap glass reveal">
+        <table class="compare">
+          <thead><tr><th>Framework</th><th>Core abstraction</th><th>Control</th><th>Persistence &amp; HITL</th><th>Best when…</th></tr></thead>
+          <tbody>
+            <tr class="hl"><td><b>LangGraph</b></td><td>Stateful graph (nodes, edges, reducers)</td><td><span class="meter m5"></span></td><td>Built-in checkpoints, interrupts, time travel</td><td>You need precise control, long-running or production agents</td></tr>
+            <tr><td><b>LangChain <code>create_agent</code></b></td><td>Prebuilt agent loop + middleware (runs on LangGraph)</td><td><span class="meter m3"></span></td><td>Inherited from LangGraph</td><td>A standard tool-calling agent with minimal code</td></tr>
+            <tr><td><b>CrewAI</b></td><td>Role-based crews of agents &amp; tasks; Flows</td><td><span class="meter m3"></span></td><td>Memory &amp; flow state options</td><td>Role-play style collaboration, fast prototyping</td></tr>
+            <tr><td><b>AutoGen / AG2</b></td><td>Conversing agents, event-driven actors</td><td><span class="meter m3"></span></td><td>Varies by version</td><td>Research on multi-agent conversation</td></tr>
+            <tr><td><b>OpenAI Agents SDK</b></td><td>Agents, handoffs, guardrails, sessions</td><td><span class="meter m2"></span></td><td>Sessions; external durability</td><td>Lightweight agents, mostly on one provider</td></tr>
+            <tr><td><b>LlamaIndex Workflows</b></td><td>Event-driven steps</td><td><span class="meter m4"></span></td><td>Context &amp; checkpoint options</td><td>Data- and retrieval-heavy pipelines</td></tr>
+            <tr><td><b>Plain code loop</b></td><td>A <code>while</code> loop around an SDK</td><td><span class="meter m5"></span></td><td>You build it</td><td>Tiny agents; maximum transparency</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= RESEARCH ================= -->
+    <section class="section" id="research">
+      <div class="section-head reveal">
+        <span class="kicker">10 — Research</span>
+        <h2>The papers behind the patterns</h2>
+        <p>Most LangGraph tutorials are faithful implementations of published research. Here is the reading list, linked to the architecture each one inspired.</p>
+      </div>
+      <div class="paper-grid" id="paperGrid"></div>
+    </section>
+
+    <!-- ================= PRODUCTION ================= -->
+    <section class="section" id="production">
+      <div class="section-head reveal">
+        <span class="kicker">11 — Production</span>
+        <h2>Shipping graphs that hold up</h2>
+        <p>Agents fail in new ways: loops that never end, tools that time out, state that grows without bound. Tick through the checklist as you harden yours — progress is saved in your browser.</p>
+      </div>
+      <div class="prod-shell reveal">
+        <div class="ring-wrap glass">
+          <svg viewBox="0 0 120 120" class="ring" aria-hidden="true">
+            <circle cx="60" cy="60" r="52" class="ring-bg" />
+            <circle cx="60" cy="60" r="52" class="ring-fg" id="ringFg" />
+          </svg>
+          <div class="ring-label"><b id="ringPct">0%</b><span>production-ready</span></div>
+        </div>
+        <ul class="checklist" id="checklist"></ul>
+      </div>
+    </section>
+
+    <!-- ================= FAQ ================= -->
+    <section class="section" id="faq">
+      <div class="section-head reveal">
+        <span class="kicker">12 — FAQ</span>
+        <h2>Questions people ask</h2>
+      </div>
+      <div class="faq reveal" id="faqList"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <a href="#top" class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>LangGraph<span class="muted">Atlas</span></span></a>
+        <p class="muted small">An independent, educational guide. LangGraph, LangChain and LangSmith are projects of LangChain, Inc. APIs evolve — check the official docs for the latest signatures.</p>
+      </div>
+      <div class="footer-links">
+        <a href="https://langchain-ai.github.io/langgraph/" target="_blank" rel="noopener">Docs</a>
+        <a href="https://github.com/langchain-ai/langgraph" target="_blank" rel="noopener">GitHub (Python)</a>
+        <a href="https://github.com/langchain-ai/langgraphjs" target="_blank" rel="noopener">GitHub (JS)</a>
+        <a href="https://academy.langchain.com/" target="_blank" rel="noopener">LangChain Academy</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Architecture modal -->
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card glass">
+      <button class="modal-x" data-close aria-label="Close">✕</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
