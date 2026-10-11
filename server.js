@@ -16,10 +16,16 @@ try { nodemailer = require("nodemailer"); } catch { nodemailer = null; }
 // ═══════════════════════════════════════════
 //  CONFIG
 // ═══════════════════════════════════════════
-const PORT   = 5000;
-const SECRET = "flowdesk_secret_key";
-const UPLOAD_DIR = path.join(__dirname, "public", "uploads");
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+const PORT   = process.env.PORT || 5000;
+const SECRET = process.env.JWT_SECRET || "flowdesk_secret_key";
+// Vercel's deployment filesystem is read-only; only /tmp is writable there.
+const IS_VERCEL  = !!process.env.VERCEL;
+const UPLOAD_DIR = IS_VERCEL ? path.join("/tmp", "uploads") : path.join(__dirname, "public", "uploads");
+try {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+} catch (err) {
+  console.error("Could not create upload dir:", err.message);
+}
 
 // ═══════════════════════════════════════════
 //  EXPRESS + HTTP SERVER
@@ -76,10 +82,11 @@ async function sendEmail(to, subject, text) {
 //  MYSQL CONNECTION
 // ═══════════════════════════════════════════
 const db = mysql.createPool({
-  host              : "localhost",
-  user              : "root",
-  password          : "swain@123456789",
-  database          : "employeeslogin",
+  host              : process.env.DB_HOST || "localhost",
+  port              : Number(process.env.DB_PORT || 3306),
+  user              : process.env.DB_USER || "root",
+  password          : process.env.DB_PASSWORD ?? "swain@123456789",
+  database          : process.env.DB_NAME || "employeeslogin",
   waitForConnections: true,
   connectionLimit   : 10,
   queueLimit        : 0,
@@ -89,7 +96,9 @@ const dbp = db.promise();
 db.getConnection((err, connection) => {
   if (err) {
     console.error("❌ MySQL connection failed:", err.message);
-    process.exit(1);
+    // Locally a missing DB is fatal; on serverless keep serving static pages.
+    if (!IS_VERCEL) process.exit(1);
+    return;
   }
   console.log("✅ MySQL connected (pool ready)");
   connection.release();
@@ -536,7 +545,7 @@ app.get("/", (req, res) => {
 
 // Login page
 app.get("/info", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "infopage", "info.html"));
+  res.sendFile(path.join(__dirname, "public", "Infopage", "info.html"));
 });
 
 app.get("/login", (req, res) => {
@@ -2066,8 +2075,13 @@ io.on("connection", (socket) => {
 // ═══════════════════════════════════════════
 //  START
 // ═══════════════════════════════════════════
-server.listen(PORT, () => {
-  console.log(`Hello!  FlowDesk Server → http://localhost:${PORT}`);
-  console.log(`    Login API → POST /api/login`);
-  console.log(`    Me API    → GET  /api/me  (requires Bearer token)`);
-});
+// On Vercel the app is imported as a serverless function, so don't listen there.
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`Hello!  FlowDesk Server → http://localhost:${PORT}`);
+    console.log(`    Login API → POST /api/login`);
+    console.log(`    Me API    → GET  /api/me  (requires Bearer token)`);
+  });
+}
+
+module.exports = app;
